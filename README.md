@@ -16,7 +16,11 @@ Gira interamente sul **piano gratuito Firebase (Spark)**: niente Cloud Functions
 | Gestione eventi, iscritti, QR, staff | `/admin` | Organizzatori |
 | Scansione all'ingresso | `/staff` | Staff e organizzatori |
 
-## Prima messa online
+## Pubblicazione automatica
+
+Ogni modifica caricata sul ramo `main` viene compilata e pubblicata da GitHub Actions (`.github/workflows/pubblica.yml`) su **https://cappu-events.web.app**, insieme alle regole di sicurezza. Serve una sola configurazione: il secret `FIREBASE_SERVICE_ACCOUNT` del repository, con il contenuto della chiave JSON dell'account di servizio Firebase. Lo stato delle pubblicazioni si vede nella scheda **Actions** del repository.
+
+## Prima messa online a mano (alternativa)
 
 Servono [Node.js](https://nodejs.org) 20 o più recente e il progetto Firebase `cappu-events` già creato, con Firestore, Authentication (Email/password) e Hosting attivi.
 

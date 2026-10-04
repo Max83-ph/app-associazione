@@ -1,0 +1,47 @@
+# Pubblica l'app su Firebase (cappu-events.web.app) a ogni modifica del ramo main.
+# Usa la chiave dell'account di servizio salvata nel secret FIREBASE_SERVICE_ACCOUNT.
+name: Pubblica su Firebase
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pubblica
+  cancel-in-progress: true
+
+jobs:
+  pubblica:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installa le dipendenze
+        run: npm ci
+
+      - name: Compila l'app
+        run: npm run build
+
+      - name: Prepara le credenziali
+        env:
+          CHIAVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$CHIAVE" ]; then
+            echo "::error::Manca il secret FIREBASE_SERVICE_ACCOUNT (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          printf '%s' "$CHIAVE" > "$RUNNER_TEMP/chiave.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/chiave.json" >> "$GITHUB_ENV"
+
+      - name: Pubblica app e regole di sicurezza
+        run: npx firebase deploy --only hosting,firestore:rules --project cappu-events --non-interactive
+
+      - name: Cancella le credenziali
+        if: always()
+        run: rm -f "$RUNNER_TEMP/chiave.json"

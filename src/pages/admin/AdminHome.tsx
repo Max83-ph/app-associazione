@@ -43,10 +43,11 @@ export function AdminHome() {
               <div className="riga-admin-testo">
                 <div className="riga-admin-titolo">{ev.titolo}</div>
                 <div className="riga-admin-sotto">
-                  {dataBreve(ev.data)} · {etichettaTipo[ev.tipo]} · <span className={`stato stato-${ev.stato}`}>{ev.stato}</span>
+                  {dataBreve(ev.data)}</div>
+                <div className="riga-admin-sotto">{etichettaTipo[ev.tipo]}, <span className={`stato stato-${ev.stato}`}>{{ bozza: 'bozza', aperto: 'iscrizioni aperte', chiuso: 'iscrizioni chiuse' }[ev.stato]}</span>
                 </div>
                 <div className="riga-admin-sotto">
-                  {ev.postiOccupati}/{ev.postiMax} posti{ev.tipo === 'pasto' && ev.asportoAttivo ? ` · ${ev.porzioniPrenotate} asporto` : ''}
+                  {ev.postiOccupati}/{ev.postiMax} posti{ev.tipo === 'pasto' && ev.asportoAttivo ? `, ${ev.porzioniPrenotate} asporto` : ''}
                 </div>
               </div>
               <div className="riga-admin-azioni">

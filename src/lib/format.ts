@@ -1,15 +1,27 @@
 import type { Timestamp } from 'firebase/firestore';
 import type { Evento } from '../types';
 
-const GIORNI = ['DOM', 'LUN', 'MAR', 'MER', 'GIO', 'VEN', 'SAB'];
-const MESI = ['GEN', 'FEB', 'MAR', 'APR', 'MAG', 'GIU', 'LUG', 'AGO', 'SET', 'OTT', 'NOV', 'DIC'];
+const GIORNI = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
 
 const due = (n: number) => String(n).padStart(2, '0');
 
-/** "DOM 18 OTT · 12:30" */
+/** "Domenica 18 ottobre, ore 12:30" */
 export function dataBreve(ts: Timestamp): string {
   const d = ts.toDate();
-  return `${GIORNI[d.getDay()]} ${d.getDate()} ${MESI[d.getMonth()]} · ${due(d.getHours())}:${due(d.getMinutes())}`;
+  return `${GIORNI[d.getDay()]} ${d.getDate()} ${MESI[d.getMonth()]}, ore ${ora(ts)}`;
+}
+
+/** "12:30" */
+export function ora(ts: Timestamp): string {
+  const d = ts.toDate();
+  return `${due(d.getHours())}:${due(d.getMinutes())}`;
+}
+
+/** Pezzi della data per la tessera delle card: { giorno: "18", mese: "ott", settimana: "Domenica" } */
+export function partiData(ts: Timestamp) {
+  const d = ts.toDate();
+  return { giorno: String(d.getDate()), mese: MESI[d.getMonth()].slice(0, 3), settimana: GIORNI[d.getDay()] };
 }
 
 /** Valore per un campo <input type="datetime-local">. */

@@ -39,7 +39,7 @@ export function Utenti() {
                   <div className="iscritto-sotto">{u.email}</div>
                 </div>
                 {u.id === utente?.uid ? (
-                  <span className="etichetta etichetta-neutro">Tu · {ETICHETTE[u.ruolo]}</span>
+                  <span className="etichetta etichetta-neutro">Tu, {ETICHETTE[u.ruolo]}</span>
                 ) : (
                   <label className="selettore-ruolo">
                     <span className="visivamente-nascosto">Ruolo di {u.email}</span>

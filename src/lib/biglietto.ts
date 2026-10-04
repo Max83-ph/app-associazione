@@ -13,8 +13,8 @@ export const qrLinkDataUrl = (url: string, width = 1024) =>
   QRCode.toDataURL(url, { width, margin: 2, errorCorrectionLevel: 'M' });
 
 export function descriviModalita(p: Prenotazione): string {
-  if (p.modalita === 'asporto') return `Asporto · ${p.quantita} ${p.quantita === 1 ? 'porzione' : 'porzioni'}`;
-  if (p.modalita === 'tavolo') return `Al tavolo · ${p.quantita} ${p.quantita === 1 ? 'persona' : 'persone'}`;
+  if (p.modalita === 'asporto') return `Asporto, ${p.quantita} ${p.quantita === 1 ? 'porzione' : 'porzioni'}`;
+  if (p.modalita === 'tavolo') return `Al tavolo, ${p.quantita} ${p.quantita === 1 ? 'persona' : 'persone'}`;
   if (p.partecipanti.length) return `${p.partecipanti.length} ${p.partecipanti.length === 1 ? 'bambino' : 'bambini'}`;
   return `${p.quantita} ${p.quantita === 1 ? 'persona' : 'persone'}`;
 }
@@ -69,8 +69,8 @@ export function scaricaPdfFirmato(p: Prenotazione) {
     y += righe.length * size * 0.42 + 3;
   };
   scrivi(NOME_ASSOCIAZIONE, 14, 'bold');
-  scrivi(`${p.eventoTitolo} · ${dataBreve(p.eventoData)}`, 11);
-  scrivi(`Firmatario: ${p.nome} ${p.cognome} (${p.email}) · Biglietto ${codiceLeggibile(p.id)}`, 10);
+  scrivi(`${p.eventoTitolo}, ${dataBreve(p.eventoData)}`, 11);
+  scrivi(`Firmatario: ${p.nome} ${p.cognome} (${p.email}), biglietto ${codiceLeggibile(p.id)}`, 10);
   if (p.partecipanti.length) scrivi(`Partecipanti: ${p.partecipanti.map((b) => `${b.nome} ${b.cognome}, ${b.eta} anni`).join('; ')}`, 10);
   if (p.createdAt) scrivi(`Data firma: ${p.createdAt.toDate().toLocaleString('it-IT')}`, 10);
   y += 3;

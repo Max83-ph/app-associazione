@@ -73,11 +73,11 @@ export function Ingresso() {
     <div className="schermo-staff">
       <header className="staff-testa">
         <div>
-          <div className="staff-etichetta">STAFF · INGRESSO</div>
+          <div className="staff-etichetta">Ingresso staff</div>
           <label className="visivamente-nascosto" htmlFor="scegli-evento">Evento</label>
           <select id="scegli-evento" className="staff-evento" value={eventoId} onChange={(e) => { setEventoId(e.target.value); setEsito(null); }}>
             {eventi.length === 0 && <option value="">Nessun evento in programma</option>}
-            {eventi.map((e) => <option key={e.id} value={e.id}>{e.titolo} · {dataBreve(e.data)}</option>)}
+            {eventi.map((e) => <option key={e.id} value={e.id}>{e.titolo}, {dataBreve(e.data)}</option>)}
           </select>
         </div>
         <div className="contatore-staff" aria-label="Persone entrate">{entrati} / {attesi}</div>
@@ -103,10 +103,10 @@ export function Ingresso() {
 
       {ultimi.length > 0 && (
         <section className="ultime">
-          <h2>ULTIMI INGRESSI</h2>
+          <h2>Ultimi ingressi</h2>
           {ultimi.map((p) => (
             <div key={p.id} className="riga-ultima">
-              <span>{p.cognome} {p.nome} · {p.quantita} pers.</span>
+              <span>{p.cognome} {p.nome}, {p.quantita} pers.</span>
               {p.consensi.liberatoriaFoto === false && <span className="etichetta etichetta-giallo">Niente foto</span>}
             </div>
           ))}
@@ -143,14 +143,14 @@ function PannelloEsito({ esito, evento }: { esito: Esito; evento?: Evento }) {
         {esito.tipo === 'valido' && <span className="spunta-esito"><Icona nome="ok" size={20} spessore={2.6} /></span>}
         {titolo}
       </div>
-      <div className="esito-nome">{p.nome} {p.cognome} · {descriviModalita(p)}</div>
+      <div className="esito-nome">{p.nome} {p.cognome}, {descriviModalita(p)}</div>
       {esito.tipo === 'altro-evento' && <div>È per “{p.eventoTitolo}”, non per {evento?.titolo ?? 'questo evento'}.</div>}
       {esito.tipo === 'usato' && p.checkInAt && <div>Entrato alle {p.checkInAt.toDate().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</div>}
       {p.partecipanti.length > 0 && <div>{p.partecipanti.map((b) => `${b.nome} (${b.eta})`).join(', ')}</div>}
       {p.consensi.liberatoriaFoto === false && <div className="etichetta etichetta-giallo">Niente foto</div>}
       {(esito.tipo === 'valido' || esito.tipo === 'usato') && (
         p.pagamento.stato === 'da_pagare' ? (
-          <button type="button" className="bottone scuro" onClick={() => segnaPagamento(p.id, true)}>Da pagare in loco · Segna pagato</button>
+          <button type="button" className="bottone scuro" onClick={() => segnaPagamento(p.id, true)}>Da pagare in loco: segna pagato</button>
         ) : (
           <div>Pagamento registrato</div>
         )

@@ -34,8 +34,8 @@ export function EventoPagina() {
       </div>
       <main className="contenuto">
         <div>
-          <div className="card-data" style={{ color: scurisci(ev.colore) }}>
-            {dataBreve(ev.data)}{ev.luogo ? ` · ${ev.luogo}` : ''}
+          <div className="card-quando" style={{ color: scurisci(ev.colore) }}>
+            {dataBreve(ev.data)}{ev.luogo ? `, ${ev.luogo}` : ''}
           </div>
           <h1 className="titolo-evento">{ev.titolo}</h1>
           <div className="meta">
@@ -243,7 +243,7 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
 
       {problemi.length > 0 && <p className="nota">Per continuare manca: {problemi.join(', ')}.</p>}
       <button type="submit" className="bottone" disabled={invio || problemi.length > 0}>
-        {invio ? 'Prenotazione in corso…' : serveFirma ? 'Firma e iscriviti' : ev.prezzo ? 'Prenota · paghi in loco' : 'Prenota'}
+        {invio ? 'Prenotazione in corso…' : serveFirma ? 'Firma e iscriviti' : ev.prezzo ? 'Prenota, paghi in loco' : 'Prenota'}
       </button>
     </form>
   );

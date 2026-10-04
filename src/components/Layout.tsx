@@ -26,7 +26,7 @@ export function Intestazione({ titolo, children }: { titolo: string; children?: 
   return (
     <header className="intestazione">
       <div className="intestazione-riga">
-        <Link to="/" className="marchio">{NOME_ASSOCIAZIONE}</Link>
+        <Link to="/" className="marchio"><span className="nastro" aria-hidden="true" />{NOME_ASSOCIAZIONE}</Link>
         <Link to="/accesso" className="link-accesso">Area riservata</Link>
       </div>
       <h1>{titolo}</h1>

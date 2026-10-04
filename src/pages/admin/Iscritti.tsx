@@ -49,7 +49,7 @@ export function Iscritti() {
         <Link to="/admin" className="indietro-chiaro" aria-label="Torna alla gestione"><Icona nome="indietro" size={22} spessore={2} /></Link>
         <div>
           <h1>Iscritti</h1>
-          {ev && <div className="sottotitolo">{ev.titolo} · {dataBreve(ev.data)}</div>}
+          {ev && <div className="sottotitolo">{ev.titolo}, {dataBreve(ev.data)}</div>}
         </div>
       </header>
       <main className="contenuto">
@@ -75,7 +75,7 @@ export function Iscritti() {
               <div className="iscritto-testa">
                 <div>
                   <div className="iscritto-nome">{p.cognome} {p.nome}</div>
-                  <div className="iscritto-sotto">{descriviModalita(p)} · {codiceLeggibile(p.id)}</div>
+                  <div className="iscritto-sotto">{descriviModalita(p)}, codice {codiceLeggibile(p.id)}</div>
                   {p.partecipanti.length > 0 && <div className="iscritto-sotto">{p.partecipanti.map((b) => `${b.nome} (${b.eta})`).join(', ')}</div>}
                 </div>
                 <div className="etichette">

@@ -6,7 +6,8 @@ import { perInputDataOra } from '../../lib/format';
 import { Icona } from '../../components/Icona';
 import type { Evento, IconaEvento, Pubblico, StatoEvento, TipoEvento } from '../../types';
 
-const COLORI = ['#E76F51', '#2A9D8F', '#6D597A', '#E9A23B', '#1D3557', '#C8553D'];
+// Verde e giallo sociali per primi, poi tinte che stanno bene accanto.
+const COLORI = ['#1E6B45', '#E0AE1F', '#2E5E8C', '#8A4E7A', '#C2532C', '#3E7F7A'];
 const ICONE: IconaEvento[] = ['pasto', 'laboratorio', 'musica', 'festa'];
 
 interface Bozza {

@@ -18,6 +18,8 @@ const messaggi: Record<string, string> = {
   'auth/weak-password': 'La password deve avere almeno 6 caratteri.',
   'auth/invalid-email': 'Email non valida.',
   'auth/too-many-requests': 'Troppi tentativi. Riprova tra qualche minuto.',
+  'auth/operation-not-allowed': 'L\'accesso con email e password non è attivo: abilitalo in Firebase → Authentication → Metodo di accesso.',
+  'permission-denied': 'Il database ha rifiutato il salvataggio del profilo (regole di sicurezza).',
 };
 
 export function Accesso() {
@@ -55,10 +57,19 @@ export function Accesso() {
               </p>
             </details>
             {!ruolo && (
-              <button type="button" className="bottone" onClick={() => registraProfilo(utente.uid, utente.email ?? '', nome || (utente.email ?? ''))}>
+              <button
+                type="button"
+                className="bottone"
+                onClick={() =>
+                  registraProfilo(utente.uid, utente.email ?? '', nome || (utente.email ?? '')).catch((err) =>
+                    setErrore(err instanceof FirebaseError ? messaggi[err.code] ?? `${err.code}: ${err.message}` : 'Errore imprevisto.'),
+                  )
+                }
+              >
                 Completa il profilo
               </button>
             )}
+            {errore && <p className="avviso errore">{errore}</p>}
             <button type="button" className="bottone contorno" onClick={() => signOut(auth)}>Esci</button>
           </div>
         </main>
@@ -76,10 +87,10 @@ export function Accesso() {
         await signInWithEmailAndPassword(auth, email.trim(), password);
       } else {
         const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
-        await registraProfilo(cred.user.uid, cred.user.email ?? email.trim(), nome);
+        await registraProfilo(cred.user.uid, cred.user.email ?? email.trim(), nome || email.trim());
       }
     } catch (err) {
-      setErrore(err instanceof FirebaseError ? messaggi[err.code] ?? err.message : 'Errore imprevisto.');
+      setErrore(err instanceof FirebaseError ? messaggi[err.code] ?? `${err.code}: ${err.message}` : 'Errore imprevisto.');
     } finally {
       setInvio(false);
     }

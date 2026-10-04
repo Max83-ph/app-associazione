@@ -1,0 +1,153 @@
+rules_version = '2';
+
+// Regole di sicurezza della demo (piano gratuito Spark, senza Cloud Functions).
+// Il controllo dei posti avviene qui: una prenotazione è accettata solo se, nella
+// stessa transazione, i contatori dell'evento salgono esattamente della quantità
+// prenotata e restano entro i limiti. Evento e prenotazione si verificano a vicenda.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Ruoli ----------
+    function signedIn() { return request.auth != null; }
+    function userPath() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function ruolo() {
+      return signedIn() && exists(userPath()) ? get(userPath()).data.ruolo : '';
+    }
+    function isOrg() { return ruolo() == 'organizzatore'; }
+    function isStaff() { return ruolo() in ['staff', 'organizzatore']; }
+
+    function eventPath(id) { return /databases/$(database)/documents/events/$(id); }
+    function bookingPath(code) { return /databases/$(database)/documents/bookings/$(code); }
+
+    // ---------- Utenti ----------
+    // Chiunque si registra nasce "in_attesa"; un organizzatore lo promuove.
+    // Il primo organizzatore si imposta a mano dalla console Firebase.
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isOrg());
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['email', 'nome', 'ruolo', 'createdAt'])
+        && request.resource.data.ruolo == 'in_attesa'
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.nome is string && request.resource.data.nome.size() <= 80
+        && request.resource.data.createdAt == request.time;
+      allow update: if isOrg()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ruolo'])
+        && request.resource.data.ruolo in ['in_attesa', 'staff', 'organizzatore'];
+      allow delete: if isOrg();
+    }
+
+    // ---------- Eventi ----------
+    match /events/{eventId} {
+      allow read: if resource.data.visibile == true || isOrg();
+      allow create, delete: if isOrg();
+      allow update: if isOrg() || contatoriPrenotazione(eventId) || contatoriAnnullamento(eventId);
+    }
+
+    // Aggiornamento dei contatori fatto da chi prenota, senza account.
+    function contatoriPrenotazione(eventId) {
+      let after = request.resource.data;
+      return after.diff(resource.data).affectedKeys()
+               .hasOnly(['postiOccupati', 'porzioniPrenotate', 'ultimaPrenotazione'])
+        && after.ultimaPrenotazione is string
+        && after.ultimaPrenotazione.size() >= 10
+        && !exists(bookingPath(after.ultimaPrenotazione))
+        && existsAfter(bookingPath(after.ultimaPrenotazione))
+        && getAfter(bookingPath(after.ultimaPrenotazione)).data.eventId == eventId;
+    }
+
+    // Restituzione dei posti quando il titolare annulla il biglietto.
+    function contatoriAnnullamento(eventId) {
+      let after = request.resource.data;
+      return after.diff(resource.data).affectedKeys()
+               .hasOnly(['postiOccupati', 'porzioniPrenotate', 'ultimaAnnullata'])
+        && after.ultimaAnnullata is string
+        && after.ultimaAnnullata.size() >= 10
+        && exists(bookingPath(after.ultimaAnnullata))
+        && get(bookingPath(after.ultimaAnnullata)).data.eventId == eventId
+        && get(bookingPath(after.ultimaAnnullata)).data.statoBiglietto == 'valido'
+        && getAfter(bookingPath(after.ultimaAnnullata)).data.statoBiglietto == 'annullato';
+    }
+
+    // ---------- Prenotazioni ----------
+    // L'ID del documento è il codice del biglietto (12 caratteri casuali):
+    // chi lo conosce può leggerlo, ma nessuno può elencare le prenotazioni
+    // tranne staff e organizzatori.
+    match /bookings/{code} {
+      allow get: if true;
+      allow list: if isStaff();
+      allow create: if nuovaPrenotazioneValida(code);
+      allow update: if aggiornamentoStaff() || annullamentoValido(code);
+      allow delete: if isOrg();
+    }
+
+    function testo(v, max) { return v is string && v.size() > 0 && v.size() <= max; }
+
+    function nuovaPrenotazioneValida(code) {
+      let d = request.resource.data;
+      let ev = get(eventPath(d.eventId)).data;
+      let evAfter = getAfter(eventPath(d.eventId)).data;
+      return code.size() >= 10 && code.size() <= 16
+        && d.keys().hasOnly(['eventId', 'eventoTitolo', 'eventoData', 'modalita', 'nome', 'cognome',
+             'email', 'quantita', 'partecipanti', 'consensi', 'firma', 'statoBiglietto', 'checkInAt',
+             'createdAt', 'pagamento'])
+        && testo(d.nome, 60) && testo(d.cognome, 60)
+        && d.email is string && d.email.size() <= 120 && d.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+        && d.quantita is int && d.quantita >= 1 && d.quantita <= 10
+        && d.partecipanti is list && d.partecipanti.size() <= 10
+        && d.consensi.privacy == true
+        && (d.firma == null || (d.firma is string && d.firma.size() <= 300000))
+        && d.statoBiglietto == 'valido' && d.checkInAt == null
+        && d.createdAt == request.time
+        && d.pagamento.stato == 'da_pagare'
+        // L'evento deve essere aperto e coerente con la prenotazione.
+        && ev.stato == 'aperto'
+        && request.time < ev.data
+        && (ev.chiusuraIscrizioni == null || request.time < ev.chiusuraIscrizioni)
+        && d.eventoTitolo == ev.titolo && d.eventoData == ev.data
+        && (!ev.documentiRichiesti.liberatoriaFoto || d.consensi.liberatoriaFoto is bool)
+        && evAfter.ultimaPrenotazione == code
+        && (
+          // Al tavolo (pasti) o partecipazione (laboratori, eventi a tema): occupa posti.
+          (((d.modalita == 'tavolo' && ev.tipo == 'pasto')
+              || (d.modalita == 'partecipazione' && ev.tipo != 'pasto'))
+            && evAfter.postiOccupati == ev.postiOccupati + d.quantita
+            && evAfter.postiOccupati <= ev.postiMax
+            && evAfter.porzioniPrenotate == ev.porzioniPrenotate)
+          ||
+          // Asporto: illimitato fino alla sera prima, poi entro il tetto del giorno.
+          (d.modalita == 'asporto' && ev.tipo == 'pasto' && ev.asportoAttivo == true
+            && evAfter.porzioniPrenotate == ev.porzioniPrenotate + d.quantita
+            && evAfter.postiOccupati == ev.postiOccupati
+            && (request.time < ev.inizioGiorno || evAfter.porzioniPrenotate <= ev.porzioniMaxGiornoEvento))
+        );
+    }
+
+    // Staff all'ingresso: check-in e pagamento in loco, nient'altro.
+    function aggiornamentoStaff() {
+      return isStaff()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['statoBiglietto', 'checkInAt', 'pagamento'])
+        && resource.data.statoBiglietto in ['valido', 'usato']
+        && request.resource.data.statoBiglietto in ['valido', 'usato'];
+    }
+
+    // Il titolare annulla il proprio biglietto prima dell'evento.
+    function annullamentoValido(code) {
+      let d = request.resource.data;
+      let prima = resource.data;
+      let ev = get(eventPath(prima.eventId)).data;
+      let evAfter = getAfter(eventPath(prima.eventId)).data;
+      return prima.statoBiglietto == 'valido'
+        && d.diff(prima).affectedKeys().hasOnly(['statoBiglietto', 'annullataAt'])
+        && d.statoBiglietto == 'annullato'
+        && d.annullataAt == request.time
+        && request.time < ev.data
+        && evAfter.ultimaAnnullata == code
+        && (prima.modalita == 'asporto'
+              ? (evAfter.porzioniPrenotate == ev.porzioniPrenotate - prima.quantita
+                 && evAfter.postiOccupati == ev.postiOccupati)
+              : (evAfter.postiOccupati == ev.postiOccupati - prima.quantita
+                 && evAfter.porzioniPrenotate == ev.porzioniPrenotate));
+    }
+  }
+}

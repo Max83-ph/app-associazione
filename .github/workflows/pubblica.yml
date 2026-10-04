@@ -15,9 +15,9 @@ jobs:
   pubblica:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -40,7 +40,13 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/chiave.json" >> "$GITHUB_ENV"
 
       - name: Pubblica app e regole di sicurezza
-        run: npx firebase deploy --only hosting,firestore:rules --project cappu-events --non-interactive
+        run: |
+          set -o pipefail
+          if ! npx firebase deploy --only hosting,firestore:rules --project cappu-events --non-interactive 2>&1 | tee "$RUNNER_TEMP/esito.txt"; then
+            # Riporta l'errore anche come annotazione, visibile nel riepilogo della pubblicazione.
+            grep -v '^\s*$' "$RUNNER_TEMP/esito.txt" | tail -n 12 | while IFS= read -r riga; do echo "::error::$riga"; done
+            exit 1
+          fi
 
       - name: Cancella le credenziali
         if: always()

@@ -19,6 +19,7 @@ const messaggi: Record<string, string> = {
   'auth/invalid-email': 'Email non valida.',
   'auth/too-many-requests': 'Troppi tentativi. Riprova tra qualche minuto.',
   'auth/operation-not-allowed': 'L\'accesso con email e password non è attivo: abilitalo in Firebase → Authentication → Metodo di accesso.',
+  'auth/configuration-not-found': 'Authentication non è ancora attivo nel progetto Firebase: in console apri Authentication → Inizia, poi abilita Email/password.',
   'permission-denied': 'Il database ha rifiutato il salvataggio del profilo (regole di sicurezza).',
 };
 

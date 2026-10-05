@@ -1,5 +1,7 @@
 import {
   addDoc,
+  getDoc,
+  writeBatch,
   collection,
   deleteDoc,
   doc,
@@ -50,10 +52,11 @@ export function ascoltaMioSocio(uid: string, cb: (s: Socio | null) => void, err:
 }
 
 /** Richiesta di adesione: il documento ha come ID l'uid dell'account. */
-export async function inviaRichiesta(uid: string, dati: DatiSocio, firma: string) {
+export async function inviaRichiesta(uid: string, dati: DatiSocio, firma: string, codiceIscrizione: string) {
   await setDoc(doc(soci, uid), {
     ...pulisci(dati),
     uid,
+    codiceIscrizione,
     firma,
     firmatoIl: serverTimestamp(),
     stato: 'in_attesa',
@@ -161,4 +164,45 @@ export async function salvaAvviso(id: string | null, a: { titolo: string; testo:
 
 export async function eliminaAvviso(id: string) {
   await deleteDoc(doc(avvisi, id));
+}
+
+// ---------- Iscrizione online: link dedicato + codice ----------
+// Il codice valido è un documento in "codiciIscrizione" con ID = codice:
+// chiunque può verificare un codice che conosce, nessuno può elencarli.
+// L'impostazione corrente (codice e stato) la vedono solo gli organizzatori.
+
+export interface ImpostazioniIscrizione {
+  codice: string;
+  attiva: boolean;
+}
+
+export const normalizzaCodiceIscrizione = (c: string) => c.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+
+export async function verificaCodiceIscrizione(input: string): Promise<boolean> {
+  const c = normalizzaCodiceIscrizione(input);
+  if (c.length < 4) return false;
+  try {
+    const d = await getDoc(doc(db, 'codiciIscrizione', c));
+    return d.exists() && d.data().attivo === true;
+  } catch {
+    return false;
+  }
+}
+
+export function ascoltaImpostazioniIscrizione(cb: (i: ImpostazioniIscrizione | null) => void, err: (e: Error) => void) {
+  return onSnapshot(
+    doc(db, 'impostazioni', 'iscrizione'),
+    (d) => cb(d.exists() ? (d.data() as ImpostazioniIscrizione) : null),
+    err,
+  );
+}
+
+/** Sostituisce il codice (il vecchio smette di funzionare) e/o apre e chiude le iscrizioni. */
+export async function salvaImpostazioniIscrizione(nuovo: ImpostazioniIscrizione, vecchioCodice: string | null) {
+  const codice = normalizzaCodiceIscrizione(nuovo.codice);
+  const b = writeBatch(db);
+  if (vecchioCodice && vecchioCodice !== codice) b.delete(doc(db, 'codiciIscrizione', vecchioCodice));
+  b.set(doc(db, 'codiciIscrizione', codice), { attivo: nuovo.attiva, aggiornatoIl: serverTimestamp() });
+  b.set(doc(db, 'impostazioni', 'iscrizione'), { codice, attiva: nuovo.attiva, aggiornatoIl: serverTimestamp() });
+  await b.commit();
 }

@@ -15,8 +15,9 @@ Gira interamente sul **piano gratuito Firebase (Spark)**: niente Cloud Functions
 | Area riservata (accesso) | `/accesso` | Staff e organizzatori |
 | Gestione eventi, iscritti, QR, staff | `/admin` | Organizzatori |
 | Scansione all'ingresso | `/staff` | Staff e organizzatori |
-| Area soci: adesione con firma, tessera, bacheca, i miei dati | `/soci` | Soci |
-| Gestione soci: approvazioni, tessere, Excel, PDF firmati | `/admin/soci` | Organizzatori |
+| Area soci: accesso, tessera, bacheca, i miei dati | `/soci` | Soci |
+| Iscrizione soci (link dedicato + codice) | `/soci/iscrizione` | Chi ha link e codice |
+| Gestione soci: approvazioni, tessere, Excel, PDF firmati, codice e QR di iscrizione | `/admin/soci` | Organizzatori |
 | Bacheca soci: avvisi e news | `/admin/bacheca` | Organizzatori |
 
 ## Pubblicazione automatica

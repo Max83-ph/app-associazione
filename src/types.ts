@@ -123,6 +123,8 @@ export interface Socio extends DatiSocio {
   tessere: Record<string, Tessera>;
   note: string;
   creatoDa: 'socio' | 'admin';
+  /** Codice di iscrizione usato (solo per le richieste dall'app). */
+  codiceIscrizione?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

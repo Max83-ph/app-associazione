@@ -14,6 +14,7 @@ const EventoForm = lazy(() => import('./pages/admin/EventoForm').then((m) => ({ 
 const Iscritti = lazy(() => import('./pages/admin/Iscritti').then((m) => ({ default: m.Iscritti })));
 const Utenti = lazy(() => import('./pages/admin/Utenti').then((m) => ({ default: m.Utenti })));
 const AreaSoci = lazy(() => import('./pages/soci/AreaSoci').then((m) => ({ default: m.AreaSoci })));
+const Iscrizione = lazy(() => import('./pages/soci/AreaSoci').then((m) => ({ default: m.Iscrizione })));
 const Soci = lazy(() => import('./pages/admin/Soci').then((m) => ({ default: m.Soci })));
 const SocioDettaglio = lazy(() => import('./pages/admin/SocioDettaglio').then((m) => ({ default: m.SocioDettaglio })));
 const NuovoSocio = lazy(() => import('./pages/admin/SocioDettaglio').then((m) => ({ default: m.NuovoSocio })));
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="evento/:id" element={<EventoPagina />} />
             <Route path="carnevale" element={<Carnevale />} />
             <Route path="soci" element={<AreaSoci />} />
+            <Route path="soci/iscrizione" element={<Iscrizione />} />
             <Route path="info" element={<Info />} />
             <Route path="chi-siamo" element={<Navigate to="/info" replace />} />
             <Route path="contatti" element={<Navigate to="/info" replace />} />

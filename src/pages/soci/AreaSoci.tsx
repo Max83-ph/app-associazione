@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -8,7 +9,15 @@ import {
 import { FirebaseError } from 'firebase/app';
 import { auth } from '../../firebase';
 import { useAuth } from '../../lib/auth';
-import { aggiornaMieiDati, annoCorrente, ascoltaAvvisi, ascoltaMioSocio, inviaRichiesta } from '../../lib/soci';
+import {
+  aggiornaMieiDati,
+  annoCorrente,
+  ascoltaAvvisi,
+  ascoltaMioSocio,
+  inviaRichiesta,
+  normalizzaCodiceIscrizione,
+  verificaCodiceIscrizione,
+} from '../../lib/soci';
 import { pdfSocio } from '../../lib/esportaSoci';
 import { Intestazione } from '../../components/Layout';
 import { ModuloSocio, SOCIO_VUOTO } from '../../components/ModuloSocio';
@@ -36,20 +45,17 @@ export function AreaSoci() {
   if (caricamento || (utente && socio === undefined)) {
     return <><Intestazione titolo="Area soci" /><main className="contenuto"><p className="vuoto">Caricamento…</p></main></>;
   }
-  if (!utente) return <><Intestazione titolo="Area soci" /><Benvenuto /></>;
+  if (!utente) return <><Intestazione titolo="Area soci" /><Benvenuto soloAccesso /></>;
 
   if (!socio) {
     return (
       <>
-        <Intestazione titolo="Diventa socio" />
+        <Intestazione titolo="Area soci" />
         <main className="contenuto">
-          <p className="intro">Compila i tuoi dati e firma con il dito. La richiesta arriva agli organizzatori, che la confermano.</p>
-          <ModuloSocio
-            chi="socio"
-            iniziale={{ ...SOCIO_VUOTO, email: utente.email ?? '' }}
-            etichettaInvio="Firma e invia la richiesta"
-            onInvia={(dati, firma) => inviaRichiesta(utente.uid, dati, firma!)}
-          />
+          <div className="pannello">
+            <h2>Nessuna iscrizione</h2>
+            <p>Questo account non risulta iscritto come socio. Per iscriverti apri il link di iscrizione che ti hanno dato gli organizzatori e inserisci il codice.</p>
+          </div>
           <Esci />
         </main>
       </>
@@ -81,8 +87,88 @@ export function AreaSoci() {
   return <AreaAttivo socio={socio} />;
 }
 
-function Benvenuto() {
-  const [modo, setModo] = useState<'registrati' | 'accedi'>('registrati');
+/** Pagina dedicata, raggiungibile solo con il link: /soci/iscrizione. */
+export function Iscrizione() {
+  const { utente, caricamento } = useAuth();
+  const [cerca] = useSearchParams();
+  const [codice, setCodice] = useState(normalizzaCodiceIscrizione(cerca.get('codice') ?? ''));
+  const [valido, setValido] = useState<string | null>(null);
+  const [verifico, setVerifico] = useState(false);
+  const [errore, setErrore] = useState('');
+  const [socio, setSocio] = useState<Socio | null | undefined>(undefined);
+  const [inviata, setInviata] = useState(false);
+
+  useEffect(() => {
+    if (!utente) return;
+    return ascoltaMioSocio(utente.uid, setSocio, () => setSocio(null));
+  }, [utente]);
+
+  const verifica = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrore('');
+    setVerifico(true);
+    const c = normalizzaCodiceIscrizione(codice);
+    if (await verificaCodiceIscrizione(c)) setValido(c);
+    else setErrore('Codice non valido, oppure le iscrizioni sono chiuse. Controlla con gli organizzatori.');
+    setVerifico(false);
+  };
+
+  if (caricamento || (utente && socio === undefined)) {
+    return <><Intestazione titolo="Diventa socio" /><main className="contenuto"><p className="vuoto">Caricamento…</p></main></>;
+  }
+  if (inviata || (utente && socio)) return <Navigate to="/soci" replace />;
+
+  if (!valido) {
+    return (
+      <>
+        <Intestazione titolo="Diventa socio" />
+        <main className="contenuto">
+          <p className="intro">Per iscriverti serve il codice che ti hanno dato gli organizzatori.</p>
+          <form className="modulo pannello" onSubmit={verifica}>
+            <label>Codice di iscrizione
+              <input value={codice} onChange={(e) => setCodice(e.target.value.toUpperCase())} autoCapitalize="characters" autoComplete="off" spellCheck={false} className="maiuscolo" />
+            </label>
+            {errore && <p className="avviso errore">{errore}</p>}
+            <button type="submit" className="bottone" disabled={verifico || codice.trim().length < 4}>{verifico ? 'Verifico…' : 'Continua'}</button>
+          </form>
+          <p className="nota">Sei già socio? <Link to="/soci">Accedi all'Area soci</Link>.</p>
+        </main>
+      </>
+    );
+  }
+
+  if (!utente) {
+    return (
+      <>
+        <Intestazione titolo="Diventa socio" />
+        <p className="intro passo">Codice corretto. Ora crea il tuo account: ti servirà per entrare nell'Area soci.</p>
+        <Benvenuto />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Intestazione titolo="Diventa socio" />
+      <main className="contenuto">
+        <p className="intro">Compila i tuoi dati e firma con il dito. La richiesta arriva agli organizzatori, che la confermano.</p>
+        <ModuloSocio
+          chi="socio"
+          iniziale={{ ...SOCIO_VUOTO, email: utente.email ?? '' }}
+          etichettaInvio="Firma e invia la richiesta"
+          onInvia={async (dati, firma) => {
+            await inviaRichiesta(utente.uid, dati, firma!, valido);
+            setInviata(true);
+          }}
+        />
+        <Esci />
+      </main>
+    </>
+  );
+}
+
+function Benvenuto({ soloAccesso = false }: { soloAccesso?: boolean }) {
+  const [modo, setModo] = useState<'registrati' | 'accedi'>(soloAccesso ? 'accedi' : 'registrati');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errore, setErrore] = useState('');
@@ -116,15 +202,19 @@ function Benvenuto() {
 
   return (
     <main className="contenuto">
-      <div className="pannello">
-        <h2>Entra nel Gruppo</h2>
-        <p>Con l'area soci hai la tua tessera, la bacheca con news e avvisi riservati ai soci, e puoi entrare nel gruppo WhatsApp e nella mailing list del {NOME_COMITATO}.</p>
-      </div>
-      <form className="modulo pannello" onSubmit={invia}>
-        <div className="griglia-2">
-          <button type="button" className={modo === 'registrati' ? 'scelta attiva' : 'scelta'} aria-pressed={modo === 'registrati'} onClick={() => setModo('registrati')}>Prima volta</button>
-          <button type="button" className={modo === 'accedi' ? 'scelta attiva' : 'scelta'} aria-pressed={modo === 'accedi'} onClick={() => setModo('accedi')}>Sono già registrato</button>
+      {soloAccesso && (
+        <div className="pannello">
+          <h2>Entra nell'Area soci</h2>
+          <p>Qui trovi la tua tessera, la bacheca con news e avvisi riservati ai soci e i tuoi dati.</p>
         </div>
+      )}
+      <form className="modulo pannello" onSubmit={invia}>
+        {!soloAccesso && (
+          <div className="griglia-2">
+            <button type="button" className={modo === 'registrati' ? 'scelta attiva' : 'scelta'} aria-pressed={modo === 'registrati'} onClick={() => setModo('registrati')}>Prima volta</button>
+            <button type="button" className={modo === 'accedi' ? 'scelta attiva' : 'scelta'} aria-pressed={modo === 'accedi'} onClick={() => setModo('accedi')}>Ho già un account</button>
+          </div>
+        )}
         <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></label>
         <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={modo === 'accedi' ? 'current-password' : 'new-password'} required minLength={6} />
           {modo === 'registrati' && <span className="nota">Almeno 6 caratteri.</span>}
@@ -134,6 +224,9 @@ function Benvenuto() {
         <button type="submit" className="bottone" disabled={invio}>{modo === 'registrati' ? 'Crea account e continua' : 'Accedi'}</button>
         {modo === 'accedi' && <button type="button" className="link-bottone" onClick={recupera}>Password dimenticata?</button>}
       </form>
+      {soloAccesso && (
+        <p className="nota">Vuoi diventare socio? Chiedi agli organizzatori il link e il codice di iscrizione.</p>
+      )}
     </main>
   );
 }

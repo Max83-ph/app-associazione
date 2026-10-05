@@ -180,8 +180,12 @@ service cloud.firestore {
       return signedIn() && id == request.auth.uid
         && d.keys().hasOnly(['uid', 'nome', 'cognome', 'dataNascita', 'luogoNascita', 'codiceFiscale',
              'residenza', 'email', 'cellulare', 'consensi', 'firma', 'firmatoIl', 'stato', 'tessere',
-             'note', 'creatoDa', 'createdAt', 'updatedAt'])
+             'note', 'creatoDa', 'createdAt', 'updatedAt', 'codiceIscrizione'])
         && d.uid == request.auth.uid
+        // Serve il codice di iscrizione in vigore (le iscrizioni devono essere aperte).
+        && d.codiceIscrizione is string && d.codiceIscrizione.matches('^[A-Z0-9-]{4,30}$')
+        && exists(/databases/$(database)/documents/codiciIscrizione/$(d.codiceIscrizione))
+        && get(/databases/$(database)/documents/codiciIscrizione/$(d.codiceIscrizione)).data.attivo == true
         && testo(d.nome, 60) && testo(d.cognome, 60) && testo(d.luogoNascita, 80)
         && d.dataNascita is string && d.dataNascita.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
         && d.codiceFiscale is string && d.codiceFiscale.matches('^[A-Z0-9]{16}$')
@@ -204,6 +208,17 @@ service cloud.firestore {
       allow create: if isOrg() || richiestaSocioValida(id);
       allow update: if isOrg() || aggiornamentoSocioValido(id);
       allow delete: if isOrg();
+    }
+
+    // Codici di iscrizione: si verifica un codice conosciuto, non si possono elencare.
+    match /codiciIscrizione/{codice} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if isOrg();
+    }
+
+    match /impostazioni/{id} {
+      allow read, write: if isOrg();
     }
 
     // Bacheca: la leggono i soci attivi, lo staff e gli organizzatori.

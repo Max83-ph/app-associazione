@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { annoCorrente, ascoltaSoci } from '../../lib/soci';
 import { excelSoci, pdfTuttiSoci } from '../../lib/esportaSoci';
 import { Icona } from '../../components/Icona';
+import { IscrizioneOnline } from './IscrizioneOnline';
 import type { Socio, StatoSocio } from '../../types';
 
 type Filtro = 'in_attesa' | 'attivo' | 'tutti';
@@ -77,6 +78,8 @@ export function Soci() {
           </button>
         </div>
         <p className="nota">L'Excel contiene tutti i soci, più due fogli pronti: chi vuole il gruppo WhatsApp e chi la mailing list. Il PDF raccoglie i moduli firmati dei soci mostrati qui sotto.</p>
+
+        <IscrizioneOnline />
 
         <div className="filtri-chiari" role="group" aria-label="Filtra i soci">
           {([['attivo', `Attivi (${attivi.length})`], ['in_attesa', `Da approvare (${inAttesa.length})`], ['tutti', 'Tutti']] as [Filtro, string][]).map(([f, t]) => (

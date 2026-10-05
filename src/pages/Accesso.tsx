@@ -112,7 +112,7 @@ export function Accesso() {
     <>
       <Intestazione titolo="Area riservata" />
       <main className="contenuto">
-        <p className="nota">Accesso per organizzatori e staff. Per iscriverti a un evento non serve un account: <Link to="/">scegli l'evento</Link>.</p>
+        <p className="nota">Accesso per organizzatori e staff. Sei socio o vuoi diventarlo? Vai all'<Link to="/soci">Area soci</Link>. Per iscriverti a un evento non serve un account: <Link to="/">scegli l'evento</Link>.</p>
         <form className="modulo pannello" onSubmit={invia}>
           {modo === 'registrati' && (
             <label>Nome e cognome<input value={nome} onChange={(e) => setNome(e.target.value)} autoComplete="name" required /></label>

@@ -423,3 +423,49 @@ input:focus, select:focus, textarea:focus { border-color: var(--verde); outline:
 @media (min-width: 561px) {
   .app { border-left: 1px solid var(--linea); border-right: 1px solid var(--linea); }
 }
+
+/* ---------- Soci ---------- */
+.intro { margin: 0; color: var(--grigio); max-width: 60ch; }
+.maiuscolo { text-transform: uppercase; }
+.mono { font-variant-numeric: tabular-nums; letter-spacing: 0.03em; }
+.griglia-cap { display: grid; grid-template-columns: 88px minmax(0, 1fr) 64px; gap: 10px; }
+.titolo-sezione { margin: 18px 0 0; font-weight: 650; font-size: 22px; }
+
+.tessera {
+  position: relative; overflow: hidden;
+  background: var(--notte); color: var(--bianco); border-radius: var(--r-grande);
+  padding: 16px 16px 16px 22px; display: flex; justify-content: space-between; align-items: flex-end; gap: 12px;
+}
+.tessera::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: linear-gradient(to right, var(--giallo) 0 50%, var(--verde) 50% 100%); }
+.tessera-anno { font-size: 13px; color: var(--notte-testo); font-weight: 600; }
+.tessera-nome { font-size: 19px; font-weight: 650; font-variation-settings: 'wdth' 85; line-height: 1.2; }
+.tessera-stato { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 13px; text-align: right; }
+.quota { padding: 2px 8px; border-radius: 7px; background: var(--notte-3); font-weight: 600; }
+.quota.ok { background: var(--giallo); color: var(--notte); }
+
+.filtri-chiari { display: flex; gap: 8px; flex-wrap: wrap; }
+.iscritto-link { text-decoration: none; color: var(--inchiostro); transition: border-color 0.15s; }
+.iscritto-link:hover { color: var(--inchiostro); border-color: var(--bordo); }
+.riga-stato { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.riga-tessera { display: flex; align-items: flex-end; gap: 12px; }
+.riga-tessera label { width: 120px; }
+.firma-img { max-width: 100%; width: 300px; border: 1px solid var(--linea); border-radius: 10px; background: #fff; }
+.firma-esistente { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.firma-esistente img { width: 240px; max-width: 100%; border: 1px solid var(--linea); border-radius: 10px; }
+.pericolo-testo { color: var(--rosso); align-self: flex-start; }
+
+.scheda-dati {
+  margin: 0; background: var(--bianco); border: 1px solid var(--linea); border-radius: var(--r-grande);
+  display: flex; flex-direction: column;
+}
+.scheda-dati div { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 10px; padding: 11px 16px; border-bottom: 1px solid var(--linea); }
+.scheda-dati div:last-child { border-bottom: 0; }
+.scheda-dati dt { color: var(--grigio); font-size: 13.5px; }
+.scheda-dati dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; }
+
+.lista-avvisi { display: flex; flex-direction: column; gap: 10px; }
+.avviso-card { background: var(--bianco); border: 1px solid var(--linea); border-radius: var(--r-grande); padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.avviso-card.evidenza { border-color: var(--giallo); box-shadow: inset 4px 0 0 var(--giallo); }
+.avviso-card h2 { margin: 0; font-weight: 650; font-size: 19px; line-height: 1.2; }
+.avviso-card p { margin: 0; white-space: pre-line; max-width: 62ch; }
+.avviso-data { display: flex; align-items: center; gap: 8px; color: var(--grigio); font-size: 13px; }

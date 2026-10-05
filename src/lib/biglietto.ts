@@ -22,7 +22,7 @@ export function descriviModalita(p: Prenotazione): string {
 export async function scaricaPdfBiglietto(p: Prenotazione) {
   const pdf = new jsPDF({ unit: 'mm', format: 'a5' });
   const w = pdf.internal.pageSize.getWidth();
-  pdf.setFillColor(29, 53, 87);
+  pdf.setFillColor(18, 32, 26);
   pdf.rect(0, 0, w, 22, 'F');
   pdf.setTextColor(255, 255, 255);
   pdf.setFont('helvetica', 'bold');

@@ -11,10 +11,13 @@ Gira interamente sul **piano gratuito Firebase (Spark)**: niente Cloud Functions
 | Home con gli eventi | `/` | Tutti |
 | Pagina evento e iscrizione | `/evento/:id` | Tutti |
 | Biglietto con QR, PDF, annullamento | `/biglietto/:codice` | Chi si è iscritto |
-| Chi siamo, Contatti, Carnevale (in arrivo) | `/chi-siamo`, `/contatti`, `/carnevale` | Tutti |
+| Info (chi siamo e contatti), Carnevale (in arrivo) | `/info`, `/carnevale` | Tutti |
 | Area riservata (accesso) | `/accesso` | Staff e organizzatori |
 | Gestione eventi, iscritti, QR, staff | `/admin` | Organizzatori |
 | Scansione all'ingresso | `/staff` | Staff e organizzatori |
+| Area soci: adesione con firma, tessera, bacheca, i miei dati | `/soci` | Soci |
+| Gestione soci: approvazioni, tessere, Excel, PDF firmati | `/admin/soci` | Organizzatori |
+| Bacheca soci: avvisi e news | `/admin/bacheca` | Organizzatori |
 
 ## Pubblicazione automatica
 

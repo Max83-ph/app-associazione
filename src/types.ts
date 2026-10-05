@@ -74,3 +74,64 @@ export interface Utente {
   nome: string;
   ruolo: Ruolo;
 }
+
+// ---------- Soci ----------
+
+export type StatoSocio = 'in_attesa' | 'attivo' | 'respinto' | 'sospeso';
+
+export interface Tessera {
+  numero: string;
+  quotaPagata: boolean;
+  pagataIl: Timestamp | null;
+}
+
+export interface Residenza {
+  indirizzo: string;
+  cap: string;
+  comune: string;
+  provincia: string;
+}
+
+export interface ConsensiSocio {
+  privacy: boolean;
+  liberatoriaFoto: boolean;
+  whatsapp: boolean;
+  mailingList: boolean;
+}
+
+export interface DatiSocio {
+  nome: string;
+  cognome: string;
+  /** "AAAA-MM-GG" */
+  dataNascita: string;
+  luogoNascita: string;
+  codiceFiscale: string;
+  residenza: Residenza;
+  email: string;
+  cellulare: string;
+  consensi: ConsensiSocio;
+}
+
+export interface Socio extends DatiSocio {
+  id: string;
+  /** Account collegato; null per i soci inseriti dall'admin senza account. */
+  uid: string | null;
+  firma: string | null;
+  firmatoIl: Timestamp | null;
+  stato: StatoSocio;
+  /** Chiave: anno ("2026"). */
+  tessere: Record<string, Tessera>;
+  note: string;
+  creatoDa: 'socio' | 'admin';
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface Avviso {
+  id: string;
+  titolo: string;
+  testo: string;
+  inEvidenza: boolean;
+  createdAt: Timestamp;
+  autore: string;
+}

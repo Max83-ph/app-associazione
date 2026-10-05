@@ -1,7 +1,7 @@
 import { Intestazione } from '../components/Layout';
 import { CONTATTI, NOME_ASSOCIAZIONE } from '../config';
 
-export function ChiSiamo() {
+export function Info() {
   return (
     <>
       <Intestazione titolo="Chi siamo" />
@@ -11,13 +11,14 @@ export function ChiSiamo() {
           bambini e la sfilata di Carnevale.
         </p>
         <p>[Qui la storia dell'associazione, chi la porta avanti e come partecipare. Testo da scrivere insieme al direttivo.]</p>
-        <p className="nota">Nella versione completa questa pagina si modifica dal pannello organizzatori, con testo e foto.</p>
+        <h2 className="titolo-sezione">Contatti</h2>
+        <Contatti />
       </main>
     </>
   );
 }
 
-export function Contatti() {
+function Contatti() {
   const voci = [
     { nome: 'Email', valore: CONTATTI.email, href: CONTATTI.email.includes('@') ? `mailto:${CONTATTI.email}` : '' },
     { nome: 'Telefono', valore: CONTATTI.telefono, href: /\d/.test(CONTATTI.telefono) ? `tel:${CONTATTI.telefono.replace(/\s/g, '')}` : '' },
@@ -32,9 +33,6 @@ export function Contatti() {
   ].filter((v) => v.valore);
 
   return (
-    <>
-      <Intestazione titolo="Contatti" />
-      <main className="contenuto">
         <ul className="lista-contatti">
           {voci.map((v) => (
             <li key={v.nome}>
@@ -43,8 +41,6 @@ export function Contatti() {
             </li>
           ))}
         </ul>
-      </main>
-    </>
   );
 }
 

@@ -10,8 +10,8 @@ export function Layout() {
       <nav className="tabbar" aria-label="Sezioni">
         <NavLink to="/" end>Eventi</NavLink>
         <NavLink to="/carnevale">Carnevale</NavLink>
-        <NavLink to="/chi-siamo">Chi siamo</NavLink>
-        <NavLink to="/contatti">Contatti</NavLink>
+        <NavLink to="/soci">Soci</NavLink>
+        <NavLink to="/info">Info</NavLink>
         {isOrganizzatore ? (
           <NavLink to="/admin">Gestione</NavLink>
         ) : isStaff ? (

@@ -152,6 +152,7 @@ export function Iscrizione() {
       <Intestazione titolo="Diventa socio" />
       <main className="contenuto">
         <p className="intro">Compila i tuoi dati e firma con il dito. La richiesta arriva agli organizzatori, che la confermano.</p>
+        <p className="nota">Prima di firmare puoi leggere l'<a href={PDF_INFORMATIVA} target="_blank" rel="noopener">informativa privacy completa (PDF)</a>.</p>
         <ModuloSocio
           chi="socio"
           iniziale={{ ...SOCIO_VUOTO, email: utente.email ?? '' }}
@@ -232,7 +233,7 @@ function Benvenuto({ soloAccesso = false }: { soloAccesso?: boolean }) {
 }
 
 function AreaAttivo({ socio }: { socio: Socio }) {
-  const [scheda, setScheda] = useState<'bacheca' | 'dati'>('bacheca');
+  const [scheda, setScheda] = useState<'bacheca' | 'dati' | 'documenti'>('bacheca');
   const anno = annoCorrente();
   const t = socio.tessere?.[anno];
 
@@ -252,12 +253,30 @@ function AreaAttivo({ socio }: { socio: Socio }) {
         <div className="filtri" role="tablist">
           <button type="button" role="tab" aria-selected={scheda === 'bacheca'} className={scheda === 'bacheca' ? 'filtro attivo' : 'filtro'} onClick={() => setScheda('bacheca')}>Bacheca</button>
           <button type="button" role="tab" aria-selected={scheda === 'dati'} className={scheda === 'dati' ? 'filtro attivo' : 'filtro'} onClick={() => setScheda('dati')}>I miei dati</button>
+          <button type="button" role="tab" aria-selected={scheda === 'documenti'} className={scheda === 'documenti' ? 'filtro attivo' : 'filtro'} onClick={() => setScheda('documenti')}>Documenti</button>
         </div>
       </Intestazione>
       <main className="contenuto">
-        {scheda === 'bacheca' ? <Bacheca /> : <MieiDati socio={socio} />}
+        {scheda === 'bacheca' && <Bacheca />}
+        {scheda === 'dati' && <MieiDati socio={socio} />}
+        {scheda === 'documenti' && <Documenti />}
       </main>
     </>
+  );
+}
+
+const PDF_INFORMATIVA = '/documenti/informativa-privacy-soci.pdf';
+
+function Documenti() {
+  return (
+    <div className="pannello">
+      <h2>Informativa privacy</h2>
+      <p>L'informativa sul trattamento dei dati personali dei soci, con il modulo di consenso. Il PDF è compilabile: puoi scrivere nome, codice fiscale, luogo e data direttamente dal telefono o dal computer, poi stamparlo e firmarlo.</p>
+      <div className="riga-azioni">
+        <a className="bottone piccolo" href={PDF_INFORMATIVA} target="_blank" rel="noopener">Apri il PDF</a>
+        <a className="bottone contorno piccolo" href={PDF_INFORMATIVA} download="Informativa privacy soci - Rione Cappuccini.pdf">Scarica</a>
+      </div>
+    </div>
   );
 }
 

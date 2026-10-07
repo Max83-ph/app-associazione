@@ -1,0 +1,48 @@
+# Crea un'utenza organizzatore (admin) dall'interfaccia di GitHub:
+# Actions → "Crea organizzatore" → Run workflow → inserisci l'email.
+# Usa la stessa chiave dell'account di servizio della pubblicazione.
+name: Crea organizzatore
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: Email del nuovo organizzatore
+        required: true
+      nome:
+        description: Nome da mostrare (facoltativo)
+        required: false
+
+jobs:
+  crea:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Installa firebase-admin
+        run: npm install --no-save --no-package-lock firebase-admin@13
+
+      - name: Prepara le credenziali
+        env:
+          CHIAVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$CHIAVE" ]; then
+            echo "::error::Manca il secret FIREBASE_SERVICE_ACCOUNT."
+            exit 1
+          fi
+          printf '%s' "$CHIAVE" > "$RUNNER_TEMP/chiave.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/chiave.json" >> "$GITHUB_ENV"
+
+      - name: Crea o promuovi l'organizzatore
+        env:
+          EMAIL: ${{ inputs.email }}
+          NOME: ${{ inputs.nome }}
+        run: node scripts/crea-organizzatore.mjs
+
+      - name: Cancella le credenziali
+        if: always()
+        run: rm -f "$RUNNER_TEMP/chiave.json"

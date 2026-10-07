@@ -15,7 +15,7 @@ Gira interamente sul **piano gratuito Firebase (Spark)**: niente Cloud Functions
 | Area riservata (accesso) | `/accesso` | Staff e organizzatori |
 | Gestione eventi, iscritti, QR, staff | `/admin` | Organizzatori |
 | Scansione all'ingresso | `/staff` | Staff e organizzatori |
-| Area soci: accesso, tessera, bacheca, i miei dati | `/soci` | Soci |
+| Area soci: accesso, tessera, bacheca, i miei dati, documenti (informativa privacy PDF) | `/soci` | Soci |
 | Iscrizione soci (link dedicato + codice) | `/soci/iscrizione` | Chi ha link e codice |
 | Gestione soci: approvazioni, tessere, Excel, PDF firmati, codice e QR di iscrizione | `/admin/soci` | Organizzatori |
 | Bacheca soci: avvisi e news | `/admin/bacheca` | Organizzatori |
@@ -43,6 +43,10 @@ L'app sarà su **https://cappu-events.web.app**.
 3. Cambia il campo `ruolo` da `in_attesa` a `organizzatore` e ricarica l'app.
 
 Da quel momento gli altri volontari si registrano da soli e tu assegni il ruolo da **Gestione → Staff**.
+
+### Creare un organizzatore senza console
+
+Su GitHub: **Actions → Crea organizzatore → Run workflow**, scrivi l'email. Il workflow crea l'account (o promuove quello esistente) con ruolo `organizzatore`. La password la imposta la persona: **Area riservata → Password dimenticata?** con quella email.
 
 ## Sviluppo
 

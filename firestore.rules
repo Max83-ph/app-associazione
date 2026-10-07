@@ -182,10 +182,9 @@ service cloud.firestore {
              'residenza', 'email', 'cellulare', 'consensi', 'firma', 'firmatoIl', 'stato', 'tessere',
              'note', 'creatoDa', 'createdAt', 'updatedAt', 'codiceIscrizione'])
         && d.uid == request.auth.uid
-        // Serve il codice di iscrizione in vigore (le iscrizioni devono essere aperte).
-        && d.codiceIscrizione is string && d.codiceIscrizione.matches('^[A-Z0-9-]{4,30}$')
-        && exists(/databases/$(database)/documents/codiciIscrizione/$(d.codiceIscrizione))
-        && get(/databases/$(database)/documents/codiciIscrizione/$(d.codiceIscrizione)).data.attivo == true
+        // Iscrizione aperta: il codice non è più obbligatorio (le richieste restano
+        // "in_attesa" finché un organizzatore non le approva). Se presente, solo il formato.
+        && (!('codiceIscrizione' in d) || (d.codiceIscrizione is string && d.codiceIscrizione.matches('^[A-Z0-9-]{4,30}$')))
         && testo(d.nome, 60) && testo(d.cognome, 60) && testo(d.luogoNascita, 80)
         && d.dataNascita is string && d.dataNascita.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
         && d.codiceFiscale is string && d.codiceFiscale.matches('^[A-Z0-9]{16}$')

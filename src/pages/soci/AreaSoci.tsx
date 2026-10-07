@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -15,8 +15,6 @@ import {
   ascoltaAvvisi,
   ascoltaMioSocio,
   inviaRichiesta,
-  normalizzaCodiceIscrizione,
-  verificaCodiceIscrizione,
 } from '../../lib/soci';
 import { pdfSocio } from '../../lib/esportaSoci';
 import { Intestazione } from '../../components/Layout';
@@ -54,7 +52,8 @@ export function AreaSoci() {
         <main className="contenuto">
           <div className="pannello">
             <h2>Nessuna iscrizione</h2>
-            <p>Questo account non risulta iscritto come socio. Per iscriverti apri il link di iscrizione che ti hanno dato gli organizzatori e inserisci il codice.</p>
+            <p>Questo account non risulta iscritto come socio.</p>
+            <Link to="/soci/iscrizione" className="bottone">Diventa socio</Link>
           </div>
           <Esci />
         </main>
@@ -87,14 +86,9 @@ export function AreaSoci() {
   return <AreaAttivo socio={socio} />;
 }
 
-/** Pagina dedicata, raggiungibile solo con il link: /soci/iscrizione. */
+/** Iscrizione soci aperta: /soci/iscrizione (senza codice, la richiesta resta in attesa di approvazione). */
 export function Iscrizione() {
   const { utente, caricamento } = useAuth();
-  const [cerca] = useSearchParams();
-  const [codice, setCodice] = useState(normalizzaCodiceIscrizione(cerca.get('codice') ?? ''));
-  const [valido, setValido] = useState<string | null>(null);
-  const [verifico, setVerifico] = useState(false);
-  const [errore, setErrore] = useState('');
   const [socio, setSocio] = useState<Socio | null | undefined>(undefined);
   const [inviata, setInviata] = useState(false);
 
@@ -103,45 +97,16 @@ export function Iscrizione() {
     return ascoltaMioSocio(utente.uid, setSocio, () => setSocio(null));
   }, [utente]);
 
-  const verifica = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrore('');
-    setVerifico(true);
-    const c = normalizzaCodiceIscrizione(codice);
-    if (await verificaCodiceIscrizione(c)) setValido(c);
-    else setErrore('Codice non valido, oppure le iscrizioni sono chiuse. Controlla con gli organizzatori.');
-    setVerifico(false);
-  };
-
   if (caricamento || (utente && socio === undefined)) {
     return <><Intestazione titolo="Diventa socio" /><main className="contenuto"><p className="vuoto">Caricamento…</p></main></>;
   }
   if (inviata || (utente && socio)) return <Navigate to="/soci" replace />;
 
-  if (!valido) {
-    return (
-      <>
-        <Intestazione titolo="Diventa socio" />
-        <main className="contenuto">
-          <p className="intro">Per iscriverti serve il codice che ti hanno dato gli organizzatori.</p>
-          <form className="modulo pannello" onSubmit={verifica}>
-            <label>Codice di iscrizione
-              <input value={codice} onChange={(e) => setCodice(e.target.value.toUpperCase())} autoCapitalize="characters" autoComplete="off" spellCheck={false} className="maiuscolo" />
-            </label>
-            {errore && <p className="avviso errore">{errore}</p>}
-            <button type="submit" className="bottone" disabled={verifico || codice.trim().length < 4}>{verifico ? 'Verifico…' : 'Continua'}</button>
-          </form>
-          <p className="nota">Sei già socio? <Link to="/soci">Accedi all'Area soci</Link>.</p>
-        </main>
-      </>
-    );
-  }
-
   if (!utente) {
     return (
       <>
         <Intestazione titolo="Diventa socio" />
-        <p className="intro passo">Codice corretto. Ora crea il tuo account: ti servirà per entrare nell'Area soci.</p>
+        <p className="intro passo">Per iscriverti crea prima il tuo account: ti servirà per entrare nell'Area soci. Sei già socio? <Link to="/soci">Accedi</Link>.</p>
         <Benvenuto />
       </>
     );
@@ -158,7 +123,7 @@ export function Iscrizione() {
           iniziale={{ ...SOCIO_VUOTO, email: utente.email ?? '' }}
           etichettaInvio="Firma e invia la richiesta"
           onInvia={async (dati, firma) => {
-            await inviaRichiesta(utente.uid, dati, firma!, valido);
+            await inviaRichiesta(utente.uid, dati, firma!);
             setInviata(true);
           }}
         />
@@ -226,7 +191,7 @@ function Benvenuto({ soloAccesso = false }: { soloAccesso?: boolean }) {
         {modo === 'accedi' && <button type="button" className="link-bottone" onClick={recupera}>Password dimenticata?</button>}
       </form>
       {soloAccesso && (
-        <p className="nota">Vuoi diventare socio? Chiedi agli organizzatori il link e il codice di iscrizione.</p>
+        <p className="nota">Vuoi diventare socio? <Link to="/soci/iscrizione">Compila la richiesta di iscrizione</Link>.</p>
       )}
     </main>
   );

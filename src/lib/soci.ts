@@ -52,11 +52,11 @@ export function ascoltaMioSocio(uid: string, cb: (s: Socio | null) => void, err:
 }
 
 /** Richiesta di adesione: il documento ha come ID l'uid dell'account. */
-export async function inviaRichiesta(uid: string, dati: DatiSocio, firma: string, codiceIscrizione: string) {
+export async function inviaRichiesta(uid: string, dati: DatiSocio, firma: string, codiceIscrizione?: string) {
   await setDoc(doc(soci, uid), {
     ...pulisci(dati),
     uid,
-    codiceIscrizione,
+    ...(codiceIscrizione ? { codiceIscrizione } : {}),
     firma,
     firmatoIl: serverTimestamp(),
     stato: 'in_attesa',

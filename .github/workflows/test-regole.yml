@@ -25,7 +25,7 @@ jobs:
       - name: Esegui i test
         run: |
           set -o pipefail
-          if ! npx firebase emulators:exec --only firestore --project demo-regole "node --test --test-reporter=spec test/" 2>&1 | tee "$RUNNER_TEMP/esito.txt"; then
+          if ! npx firebase emulators:exec --only firestore --project demo-regole "node --test --test-reporter=spec test/regole.test.mjs" 2>&1 | tee "$RUNNER_TEMP/esito.txt"; then
             grep -E "✖|not ok|Error|error|expected|at .*test" "$RUNNER_TEMP/esito.txt" | head -n 40 | while IFS= read -r riga; do echo "::error::$riga"; done
             exit 1
           fi

@@ -1,4 +1,4 @@
-// Test delle regole Firestore sull'emulatore: npx firebase emulators:exec --only firestore "node --test test/"
+// Test delle regole Firestore sull'emulatore: npx firebase emulators:exec --only firestore "node --test test/regole.test.mjs"
 import { test, before, after } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';

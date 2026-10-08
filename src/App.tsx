@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { lazy, Suspense, type ReactNode } from 'react';
 import { AuthProvider, useAuth } from './lib/auth';
+import { TestiProvider } from './lib/testi';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { EventoPagina } from './pages/EventoPagina';
@@ -19,6 +20,8 @@ const Soci = lazy(() => import('./pages/admin/Soci').then((m) => ({ default: m.S
 const SocioDettaglio = lazy(() => import('./pages/admin/SocioDettaglio').then((m) => ({ default: m.SocioDettaglio })));
 const NuovoSocio = lazy(() => import('./pages/admin/SocioDettaglio').then((m) => ({ default: m.NuovoSocio })));
 const GestioneBacheca = lazy(() => import('./pages/admin/GestioneBacheca').then((m) => ({ default: m.GestioneBacheca })));
+const GestioneTesti = lazy(() => import('./pages/admin/GestioneTesti').then((m) => ({ default: m.GestioneTesti })));
+const GestioneDocumenti = lazy(() => import('./pages/admin/GestioneDocumenti').then((m) => ({ default: m.GestioneDocumenti })));
 const Ingresso = lazy(() => import('./pages/staff/Ingresso').then((m) => ({ default: m.Ingresso })));
 function Protetta({ livello, children }: { livello: 'staff' | 'organizzatore'; children: ReactNode }) {
   const { caricamento, isStaff, isOrganizzatore } = useAuth();
@@ -30,6 +33,7 @@ function Protetta({ livello, children }: { livello: 'staff' | 'organizzatore'; c
 export default function App() {
   return (
     <AuthProvider>
+    <TestiProvider>
       <BrowserRouter>
         <Suspense fallback={<main className="contenuto"><p className="vuoto">Caricamento…</p></main>}>
         <Routes>
@@ -51,6 +55,8 @@ export default function App() {
             <Route path="admin/soci/nuovo" element={<Protetta livello="organizzatore"><NuovoSocio /></Protetta>} />
             <Route path="admin/soci/:id" element={<Protetta livello="organizzatore"><SocioDettaglio /></Protetta>} />
             <Route path="admin/bacheca" element={<Protetta livello="organizzatore"><GestioneBacheca /></Protetta>} />
+            <Route path="admin/testi" element={<Protetta livello="organizzatore"><GestioneTesti /></Protetta>} />
+            <Route path="admin/documenti" element={<Protetta livello="organizzatore"><GestioneDocumenti /></Protetta>} />
           </Route>
           <Route path="biglietto/:codice" element={<Biglietto />} />
           <Route path="staff" element={<Protetta livello="staff"><Ingresso /></Protetta>} />
@@ -58,6 +64,7 @@ export default function App() {
         </Routes>
         </Suspense>
       </BrowserRouter>
+    </TestiProvider>
     </AuthProvider>
   );
 }

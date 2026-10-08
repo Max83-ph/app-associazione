@@ -137,3 +137,38 @@ export interface Avviso {
   createdAt: Timestamp;
   autore: string;
 }
+
+// ---------- Documenti da firmare ----------
+
+export interface DocumentoFirma {
+  id: string;
+  titolo: string;
+  /** Testo del documento (può essere vuoto se c'è il PDF). */
+  testo: string;
+  /** PDF allegato come data URL (max ~650 KB), oppure null. */
+  pdf: string | null;
+  pdfNome: string | null;
+  attivo: boolean;
+  /** Sale quando cambiano testo o PDF: le firme precedenti vanno rifatte. */
+  versione: number;
+  autore: string;
+  createdAt: Timestamp;
+  aggiornatoIl: Timestamp;
+}
+
+export interface FirmaDocumento {
+  /** `${documentoId}_${uid}` */
+  id: string;
+  documentoId: string;
+  uid: string;
+  nome: string;
+  cognome: string;
+  codiceFiscale: string;
+  /** Titolo e testo al momento della firma. */
+  titolo: string;
+  testo: string;
+  pdfNome: string | null;
+  versione: number;
+  firma: string;
+  firmatoIl: Timestamp;
+}

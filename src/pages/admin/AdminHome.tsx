@@ -31,6 +31,8 @@ export function AdminHome() {
           <Link to="/staff" className="filtro">Ingresso</Link>
           <Link to="/admin/soci" className="filtro">Soci</Link>
           <Link to="/admin/bacheca" className="filtro">Bacheca</Link>
+          <Link to="/admin/documenti" className="filtro">Documenti da firmare</Link>
+          <Link to="/admin/testi" className="filtro">Testi e contatti</Link>
           <Link to="/admin/utenti" className="filtro">Staff</Link>
         </div>
       </header>

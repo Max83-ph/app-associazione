@@ -220,6 +220,56 @@ service cloud.firestore {
       allow read, write: if isOrg();
     }
 
+    // ---------- Testi modificabili ----------
+    // Informative, liberatorie, chi siamo e contatti: li legge chiunque, li scrivono gli organizzatori.
+    match /contenuti/{id} {
+      allow read: if true;
+      allow write: if isOrg() && id == 'testi'
+        && request.resource.data.keys().hasOnly(['chiSiamo', 'informativaPrivacy', 'liberatoriaFoto',
+             'informativaSoci', 'liberatoriaSoci', 'contatti', 'aggiornatoDa', 'aggiornatoIl'])
+        && request.resource.data.chiSiamo is string && request.resource.data.chiSiamo.size() <= 20000
+        && request.resource.data.informativaPrivacy is string && request.resource.data.informativaPrivacy.size() <= 20000
+        && request.resource.data.liberatoriaFoto is string && request.resource.data.liberatoriaFoto.size() <= 20000
+        && request.resource.data.informativaSoci is string && request.resource.data.informativaSoci.size() <= 20000
+        && request.resource.data.liberatoriaSoci is string && request.resource.data.liberatoriaSoci.size() <= 20000
+        && request.resource.data.contatti is map;
+    }
+
+    // ---------- Documenti da firmare ----------
+    // Li pubblicano gli organizzatori; i soci attivi vedono quelli visibili e li firmano.
+    match /documenti/{id} {
+      allow read: if isOrg() || (socioAttivo() && resource.data.attivo == true);
+      allow write: if isOrg();
+    }
+
+    function documentoPath(id) { return /databases/$(database)/documents/documenti/$(id); }
+    function socioPath() { return /databases/$(database)/documents/soci/$(request.auth.uid); }
+
+    // Firma: ID = documentoId_uid. Il socio firma (o rifirma una nuova versione) solo per sé,
+    // con il proprio nome e solo la versione attuale di un documento visibile.
+    function firmaValida(id) {
+      let d = request.resource.data;
+      let docu = get(documentoPath(d.documentoId)).data;
+      let s = get(socioPath()).data;
+      return socioAttivo()
+        && d.keys().hasOnly(['documentoId', 'uid', 'nome', 'cognome', 'codiceFiscale', 'titolo', 'testo',
+             'pdfNome', 'versione', 'firma', 'firmatoIl'])
+        && d.uid == request.auth.uid
+        && d.documentoId is string && id == d.documentoId + '_' + request.auth.uid
+        && exists(documentoPath(d.documentoId)) && docu.attivo == true
+        && d.versione == docu.versione && d.titolo == docu.titolo && d.testo == docu.testo
+        && d.nome == s.nome && d.cognome == s.cognome && d.codiceFiscale == s.codiceFiscale
+        && d.firma is string && d.firma.size() > 100 && d.firma.size() <= 300000
+        && d.firmatoIl == request.time;
+    }
+
+    match /firme/{id} {
+      allow read: if isOrg() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if firmaValida(id);
+      allow update: if firmaValida(id) && resource.data.versione != request.resource.data.versione;
+      allow delete: if isOrg();
+    }
+
     // Bacheca: la leggono i soci attivi, lo staff e gli organizzatori.
     match /avvisi/{id} {
       allow read: if socioAttivo() || isStaff();

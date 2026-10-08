@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Firma } from './Firma';
 import { erroreCF, normalizzaCF } from '../lib/codiceFiscale';
-import { INFORMATIVA_SOCI, LIBERATORIA_SOCI, NOME_COMITATO } from '../config';
+import { NOME_COMITATO } from '../config';
+import { useTesti } from '../lib/testi';
 import type { DatiSocio } from '../types';
 
 export const SOCIO_VUOTO: DatiSocio = {
@@ -54,6 +55,7 @@ interface Props {
 }
 
 export function ModuloSocio({ iniziale, chi, firmaEsistente, etichettaInvio, onInvia }: Props) {
+  const testi = useTesti();
   const [d, setD] = useState<DatiSocio>(iniziale);
   const [sceltaFoto, setSceltaFoto] = useState<boolean | null>(firmaEsistente ? iniziale.consensi.liberatoriaFoto : null);
   const [firma, setFirma] = useState<string | null>(null);
@@ -142,7 +144,7 @@ export function ModuloSocio({ iniziale, chi, firmaEsistente, etichettaInvio, onI
         <legend>Documenti</legend>
         <details className="documento">
           <summary>Leggi l'informativa privacy</summary>
-          <p>{INFORMATIVA_SOCI}</p>
+          <p>{testi.informativaSoci}</p>
         </details>
         <label className="spunta">
           <input type="checkbox" checked={d.consensi.privacy} onChange={(e) => setCons('privacy', e.target.checked)} />
@@ -152,7 +154,7 @@ export function ModuloSocio({ iniziale, chi, firmaEsistente, etichettaInvio, onI
         <div className="liberatoria">
           <details className="documento">
             <summary>Liberatoria foto e video per tutti gli eventi del Gruppo</summary>
-            <p>{LIBERATORIA_SOCI}</p>
+            <p>{testi.liberatoriaSoci}</p>
           </details>
           <div className="griglia-2">
             <button type="button" className={sceltaFoto === true ? 'scelta attiva' : 'scelta'} aria-pressed={sceltaFoto === true} onClick={() => setSceltaFoto(true)}>Acconsento</button>

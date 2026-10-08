@@ -474,3 +474,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--verde); outline:
 .link-iscrizione { display: flex; gap: 8px; align-items: center; }
 .link-iscrizione code { flex: 1; min-width: 0; padding: 10px; font-size: 13px; }
 .qr-iscrizione { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.testo-a-capo { white-space: pre-line; }
+.documento-card { text-align: left; cursor: pointer; font: inherit; color: inherit; width: 100%; }
+.documento-card:hover { border-color: var(--verde); }
+.file-pdf { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.file-pdf label.bottone { cursor: pointer; }
+.firme-documento { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--linea); padding-top: 12px; margin-top: 4px; }

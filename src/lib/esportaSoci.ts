@@ -1,6 +1,7 @@
 import type { jsPDF as JsPDF } from 'jspdf';
 import type { Socio } from '../types';
-import { INFORMATIVA_SOCI, LIBERATORIA_SOCI, NOME_ASSOCIAZIONE, NOME_COMITATO } from '../config';
+import { NOME_ASSOCIAZIONE, NOME_COMITATO } from '../config';
+import { testiCorrenti } from './testi';
 
 const siNo = (v: boolean) => (v ? 'Sì' : 'No');
 const dataIt = (iso: string) => (iso ? iso.split('-').reverse().join('/') : '');
@@ -59,11 +60,11 @@ function paginaSocio(pdf: JsPDF, s: Socio) {
   y += 4;
 
   scrivi('Informativa sul trattamento dei dati personali', 12, 'bold');
-  scrivi(INFORMATIVA_SOCI, 9);
+  scrivi(testiCorrenti().informativaSoci, 9);
   scrivi('Il socio dichiara di aver letto l\'informativa.', 10, 'bold', 5);
 
   scrivi('Liberatoria foto e video', 12, 'bold');
-  scrivi(LIBERATORIA_SOCI, 9);
+  scrivi(testiCorrenti().liberatoriaSoci, 9);
   scrivi(`Scelta del socio: ${s.consensi.liberatoriaFoto ? 'ACCONSENTE' : 'NON ACCONSENTE'}`, 10, 'bold', 5);
 
   scrivi('Comunicazioni', 12, 'bold');

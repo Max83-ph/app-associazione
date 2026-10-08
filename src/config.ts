@@ -3,12 +3,12 @@
 export const NOME_ASSOCIAZIONE = 'Rione Cappuccini';
 
 export const CONTATTI = {
-  email: '[email dell\'associazione]',
+  email: 'comitato.cappuccini@gmail.com',
   telefono: '[telefono]',
   whatsapp: '', // es. 'https://wa.me/39333...'
   instagram: '',
   facebook: '',
-  indirizzo: '[indirizzo della sede]',
+  indirizzo: 'Via Lamporo 6, 13100 Vercelli',
 };
 
 export const INFORMATIVA_PRIVACY = `Titolare del trattamento è ${NOME_ASSOCIAZIONE}. I dati inseriti (nome, cognome, email e, per i laboratori, nome ed età dei bambini) servono solo a gestire l'iscrizione all'evento e l'ingresso. Non vengono ceduti a terzi e vengono cancellati entro alcuni mesi dalla data dell'evento. Puoi chiedere in qualsiasi momento di vedere, correggere o cancellare i tuoi dati scrivendo a ${CONTATTI.email}.

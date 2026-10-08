@@ -3,7 +3,8 @@ import { jsPDF } from 'jspdf';
 import type { Prenotazione } from '../types';
 import { codiceLeggibile } from './codice';
 import { dataBreve } from './format';
-import { INFORMATIVA_PRIVACY, LIBERATORIA_FOTO, NOME_ASSOCIAZIONE } from '../config';
+import { NOME_ASSOCIAZIONE } from '../config';
+import { testiCorrenti } from './testi';
 
 /** Il QR contiene solo il codice del biglietto, nessun dato personale. */
 export const qrDataUrl = (codice: string, width = 480) =>
@@ -75,12 +76,12 @@ export function scaricaPdfFirmato(p: Prenotazione) {
   if (p.createdAt) scrivi(`Data firma: ${p.createdAt.toDate().toLocaleString('it-IT')}`, 10);
   y += 3;
   scrivi('Informativa privacy', 12, 'bold');
-  scrivi(INFORMATIVA_PRIVACY, 9.5);
+  scrivi(testiCorrenti().informativaPrivacy, 9.5);
   scrivi('Presa visione: sì', 10, 'bold');
   if (p.consensi.liberatoriaFoto !== null) {
     y += 2;
     scrivi('Liberatoria foto e video', 12, 'bold');
-    scrivi(LIBERATORIA_FOTO, 9.5);
+    scrivi(testiCorrenti().liberatoriaFoto, 9.5);
     scrivi(`Scelta: ${p.consensi.liberatoriaFoto ? 'ACCONSENTO' : 'NON ACCONSENTO'}`, 10, 'bold');
   }
   if (p.firma) {

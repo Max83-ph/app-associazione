@@ -1,16 +1,13 @@
 import { Intestazione } from '../components/Layout';
-import { CONTATTI, NOME_ASSOCIAZIONE } from '../config';
+import { useTesti } from '../lib/testi';
 
 export function Info() {
+  const { chiSiamo } = useTesti();
   return (
     <>
       <Intestazione titolo="Chi siamo" />
       <main className="contenuto testo-lungo">
-        <p>
-          <strong>{NOME_ASSOCIAZIONE}</strong> è un'associazione di volontari che organizza feste, pranzi, laboratori per
-          bambini e la sfilata di Carnevale.
-        </p>
-        <p>[Qui la storia dell'associazione, chi la porta avanti e come partecipare. Testo da scrivere insieme al direttivo.]</p>
+        <p className="testo-a-capo">{chiSiamo}</p>
         <h2 className="titolo-sezione">Contatti</h2>
         <Contatti />
       </main>
@@ -19,6 +16,7 @@ export function Info() {
 }
 
 function Contatti() {
+  const CONTATTI = useTesti().contatti;
   const voci = [
     { nome: 'Email', valore: CONTATTI.email, href: CONTATTI.email.includes('@') ? `mailto:${CONTATTI.email}` : '' },
     { nome: 'Telefono', valore: CONTATTI.telefono, href: /\d/.test(CONTATTI.telefono) ? `tel:${CONTATTI.telefono.replace(/\s/g, '')}` : '' },

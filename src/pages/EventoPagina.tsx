@@ -7,7 +7,7 @@ import type { Evento, Modalita, Partecipante } from '../types';
 import { Copertina, scurisci } from '../components/CardEvento';
 import { Icona } from '../components/Icona';
 import { Firma } from '../components/Firma';
-import { INFORMATIVA_PRIVACY, LIBERATORIA_FOTO } from '../config';
+import { useTesti } from '../lib/testi';
 
 export function EventoPagina() {
   const { id = '' } = useParams();
@@ -56,6 +56,7 @@ export function EventoPagina() {
 }
 
 function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) => void }) {
+  const testi = useTesti();
   const navigate = useNavigate();
   const pasto = ev.tipo === 'pasto';
   const conBambini = !pasto && ev.pubblico !== 'adulti';
@@ -212,7 +213,7 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
         <legend>Documenti</legend>
         <details className="documento">
           <summary>Leggi l'informativa privacy</summary>
-          <p>{INFORMATIVA_PRIVACY}</p>
+          <p>{testi.informativaPrivacy}</p>
         </details>
         <label className="spunta">
           <input type="checkbox" checked={privacy} onChange={(e) => setPrivacy(e.target.checked)} />
@@ -223,7 +224,7 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
           <div className="liberatoria">
             <details className="documento">
               <summary>Liberatoria foto e video</summary>
-              <p>{LIBERATORIA_FOTO}</p>
+              <p>{testi.liberatoriaFoto}</p>
             </details>
             <div className="griglia-2">
               <button type="button" className={liberatoria === true ? 'scelta attiva' : 'scelta'} aria-pressed={liberatoria === true} onClick={() => setLiberatoria(true)}>Acconsento</button>

@@ -19,6 +19,8 @@ Gira interamente sul **piano gratuito Firebase (Spark)**: niente Cloud Functions
 | Iscrizione soci (aperta, approvazione degli organizzatori) | `/soci/iscrizione` | Chi vuole diventare socio |
 | Gestione soci: approvazioni, tessere, Excel, PDF firmati, codice e QR di iscrizione | `/admin/soci` | Organizzatori |
 | Bacheca soci: avvisi e news | `/admin/bacheca` | Organizzatori |
+| Documenti da firmare (testo e/o PDF), firme raccolte e PDF firmati | `/admin/documenti` | Organizzatori |
+| Testi e contatti: chi siamo, informative, liberatorie | `/admin/testi` | Organizzatori |
 
 ## Pubblicazione automatica
 
@@ -55,7 +57,7 @@ npm run dev                 # app in locale su http://localhost:5173
 npm run deploy:regole       # pubblica solo le regole di sicurezza
 ```
 
-Testi dell'associazione (nome, contatti, informativa, liberatoria) in `src/config.ts`.
+Testi dell'associazione: si modificano da **Gestione → Testi e contatti** (documento Firestore `contenuti/testi`); i valori iniziali sono in `src/config.ts`.
 
 ## Come funziona la sicurezza senza server
 

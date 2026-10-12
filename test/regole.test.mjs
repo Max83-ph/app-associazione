@@ -61,16 +61,44 @@ test('firme: il socio firma per sé, con i suoi dati e la versione attuale', asy
   await assertSucceeds(getDocs(query(collection(db('org'), 'firme'), where('documentoId', '==', 'doc1'))));
 });
 
-test('iscrizione soci senza codice', async () => {
-  const r = {
-    uid: 'nuovo', nome: 'Anna', cognome: 'Bianchi', dataNascita: '1990-01-01', luogoNascita: 'Vercelli',
-    codiceFiscale: 'BNCNNA90A41L750X', residenza: { indirizzo: 'Via Roma 1', cap: '13100', comune: 'Vercelli', provincia: 'VC' },
-    email: 'nuovo@x.it', cellulare: '3331234567', consensi: { privacy: true, liberatoriaFoto: false, whatsapp: false, mailingList: false },
-    firma: FIRMA, firmatoIl: serverTimestamp(), stato: 'in_attesa', tessere: {}, note: '', creatoDa: 'socio',
-    createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
-  };
-  await assertSucceeds(setDoc(doc(db('nuovo'), 'soci/nuovo'), r));
-  await assertFails(setDoc(doc(db('nuovo2'), 'soci/nuovo2'), { ...r, uid: 'nuovo2', stato: 'attivo' }));
+const richiesta = (uid, extra = {}) => ({
+  uid, nome: 'Anna', cognome: 'Bianchi', dataNascita: '1990-01-01', luogoNascita: 'Vercelli',
+  codiceFiscale: 'BNCNNA90A41L750X', residenza: { indirizzo: 'Via Roma 1', cap: '13100', comune: 'Vercelli', provincia: 'VC' },
+  email: `${uid}@x.it`, cellulare: '3331234567', consensi: { privacy: true, liberatoriaFoto: false, whatsapp: false, mailingList: false },
+  firma: FIRMA, firmatoIl: serverTimestamp(), stato: 'in_attesa', tessere: {}, note: '', creatoDa: 'socio',
+  createdAt: serverTimestamp(), updatedAt: serverTimestamp(), ...extra,
+});
+const impostaModo = (modo) => env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), 'contenuti/iscrizione'), { modo }));
+
+test('iscrizione soci: aperte, solo con codice, chiuse', async () => {
+  await env.withSecurityRulesDisabled(async (c) => {
+    await setDoc(doc(c.firestore(), 'codiciIscrizione/CAPPU2026'), { attivo: true });
+    await setDoc(doc(c.firestore(), 'codiciIscrizione/VECCHIO'), { attivo: false });
+  });
+  // Nessuna scelta salvata: aperte.
+  await assertSucceeds(setDoc(doc(db('n1'), 'soci/n1'), richiesta('n1')));
+  await assertFails(setDoc(doc(db('n2'), 'soci/n2'), richiesta('n2', { stato: 'attivo' })));
+
+  await impostaModo('codice');
+  await assertFails(setDoc(doc(db('n3'), 'soci/n3'), richiesta('n3')));
+  await assertFails(setDoc(doc(db('n3'), 'soci/n3'), richiesta('n3', { codiceIscrizione: 'SBAGLIATO' })));
+  await assertFails(setDoc(doc(db('n3'), 'soci/n3'), richiesta('n3', { codiceIscrizione: 'VECCHIO' })));
+  await assertSucceeds(setDoc(doc(db('n3'), 'soci/n3'), richiesta('n3', { codiceIscrizione: 'CAPPU2026' })));
+
+  await impostaModo('chiuse');
+  await assertFails(setDoc(doc(db('n4'), 'soci/n4'), richiesta('n4', { codiceIscrizione: 'CAPPU2026' })));
+  await assertSucceeds(setDoc(doc(db('org'), 'soci/manuale'), richiesta('manuale', { creatoDa: 'admin' })));
+
+  await impostaModo('aperte');
+  await assertSucceeds(setDoc(doc(db('n5'), 'soci/n5'), richiesta('n5')));
+});
+
+test('modalità iscrizione: la legge chiunque, la cambiano solo gli organizzatori', async () => {
+  await assertSucceeds(getDoc(doc(db(null), 'contenuti/iscrizione')));
+  await assertFails(setDoc(doc(db('mario'), 'contenuti/iscrizione'), { modo: 'aperte' }));
+  await assertFails(setDoc(doc(db('org'), 'contenuti/iscrizione'), { modo: 'forse' }));
+  await assertSucceeds(setDoc(doc(db('org'), 'contenuti/iscrizione'), { modo: 'codice' }));
+  await impostaModo('aperte');
 });
 
 test('file: pubblici a tutti, riservati solo a soci attivi e staff', async () => {

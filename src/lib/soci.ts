@@ -172,14 +172,28 @@ export async function eliminaAvviso(a: Avviso) {
   await eliminaFiles((a.allegati ?? []).map((f) => f.id));
 }
 
-// ---------- Iscrizione online: link dedicato + codice ----------
+// ---------- Iscrizione online ----------
+// Modalità (pubblica, in contenuti/iscrizione): "aperte" a tutti, solo con "codice", "chiuse".
+// Le regole di sicurezza la applicano anche lato server.
 // Il codice valido è un documento in "codiciIscrizione" con ID = codice:
 // chiunque può verificare un codice che conosce, nessuno può elencarli.
-// L'impostazione corrente (codice e stato) la vedono solo gli organizzatori.
+// Il codice in uso lo vedono solo gli organizzatori (impostazioni/iscrizione).
+
+export type ModoIscrizione = 'aperte' | 'codice' | 'chiuse';
+/** Se l'organizzatore non ha mai scelto, le iscrizioni sono aperte (come finora). */
+export const MODO_PREDEFINITO: ModoIscrizione = 'aperte';
+
+export function ascoltaModoIscrizione(cb: (m: ModoIscrizione) => void) {
+  return onSnapshot(
+    doc(db, 'contenuti', 'iscrizione'),
+    (d) => cb((d.exists() ? (d.data().modo as ModoIscrizione) : null) ?? MODO_PREDEFINITO),
+    () => cb(MODO_PREDEFINITO),
+  );
+}
 
 export interface ImpostazioniIscrizione {
   codice: string;
-  attiva: boolean;
+  modo: ModoIscrizione;
 }
 
 export const normalizzaCodiceIscrizione = (c: string) => c.toUpperCase().replace(/[^A-Z0-9-]/g, '');
@@ -198,17 +212,18 @@ export async function verificaCodiceIscrizione(input: string): Promise<boolean> 
 export function ascoltaImpostazioniIscrizione(cb: (i: ImpostazioniIscrizione | null) => void, err: (e: Error) => void) {
   return onSnapshot(
     doc(db, 'impostazioni', 'iscrizione'),
-    (d) => cb(d.exists() ? (d.data() as ImpostazioniIscrizione) : null),
+    (d) => cb(d.exists() ? { codice: d.data().codice ?? '', modo: d.data().modo ?? (d.data().attiva ? 'codice' : 'chiuse') } : null),
     err,
   );
 }
 
-/** Sostituisce il codice (il vecchio smette di funzionare) e/o apre e chiude le iscrizioni. */
+/** Cambia modalità e/o codice (il codice vecchio smette subito di funzionare). */
 export async function salvaImpostazioniIscrizione(nuovo: ImpostazioniIscrizione, vecchioCodice: string | null) {
   const codice = normalizzaCodiceIscrizione(nuovo.codice);
   const b = writeBatch(db);
   if (vecchioCodice && vecchioCodice !== codice) b.delete(doc(db, 'codiciIscrizione', vecchioCodice));
-  b.set(doc(db, 'codiciIscrizione', codice), { attivo: nuovo.attiva, aggiornatoIl: serverTimestamp() });
-  b.set(doc(db, 'impostazioni', 'iscrizione'), { codice, attiva: nuovo.attiva, aggiornatoIl: serverTimestamp() });
+  if (codice) b.set(doc(db, 'codiciIscrizione', codice), { attivo: nuovo.modo === 'codice', aggiornatoIl: serverTimestamp() });
+  b.set(doc(db, 'impostazioni', 'iscrizione'), { codice, modo: nuovo.modo, attiva: nuovo.modo === 'codice', aggiornatoIl: serverTimestamp() });
+  b.set(doc(db, 'contenuti', 'iscrizione'), { modo: nuovo.modo, aggiornatoIl: serverTimestamp() });
   await b.commit();
 }

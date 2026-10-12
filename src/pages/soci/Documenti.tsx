@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Firma } from '../../components/Firma';
+import { Testo } from '../../components/TestoRicco';
 import { apriPdf, ascoltaDocumentiAttivi, ascoltaMieFirme, firmaDocumento, firmaValida, scaricaCopiaFirmata } from '../../lib/documenti';
 import type { DocumentoFirma, FirmaDocumento, Socio } from '../../types';
+import { ascoltaArchivio, perCartella, type VoceArchivio } from '../../lib/archivio';
+import { Allegati } from '../../components/File';
+import { ElencoPagine, usePagineLibere } from '../Pagine';
 
 const PDF_INFORMATIVA = '/documenti/informativa-privacy-soci.pdf';
 
@@ -28,6 +32,7 @@ export function useDocumentiSocio(uid: string): StatoDocumenti {
 export function DocumentiSoci({ socio, uid, stato }: { socio: Socio; uid: string; stato: StatoDocumenti }) {
   const [aperto, setAperto] = useState<string | null>(null);
   const { documenti, firme, errore } = stato;
+  const pagineSoci = usePagineLibere('soci');
   const doc = documenti?.find((d) => d.id === aperto);
 
   if (doc) return <Documento d={doc} f={firme.get(doc.id)} socio={socio} uid={uid} onChiudi={() => setAperto(null)} />;
@@ -56,6 +61,8 @@ export function DocumentiSoci({ socio, uid, stato }: { socio: Socio; uid: string
         </div>
       )}
       {documenti?.length === 0 && <p className="vuoto">Nessun documento da firmare per ora.</p>}
+      <ArchivioSoci />
+      <ElencoPagine lista={pagineSoci} titolo="Pagine riservate ai soci" />
       <div className="pannello">
         <h2>Informativa privacy</h2>
         <p>L'informativa sul trattamento dei dati personali dei soci, con il modulo di consenso. Il PDF è compilabile: puoi scrivere nome, codice fiscale, luogo e data direttamente dal telefono o dal computer.</p>
@@ -99,7 +106,7 @@ function Documento({ d, f, socio, uid, onChiudi }: { d: DocumentoFirma; f?: Firm
             <span className="nota">{d.pdfNome}</span>
           </div>
         )}
-        {d.testo && <p className="testo-a-capo">{d.testo}</p>}
+        <Testo testo={d.testo} />
       </div>
 
       {ok ? (
@@ -123,5 +130,33 @@ function Documento({ d, f, socio, uid, onChiudi }: { d: DocumentoFirma; f?: Firm
         </fieldset>
       )}
     </div>
+  );
+}
+
+function ArchivioSoci() {
+  const [lista, setLista] = useState<VoceArchivio[] | null>(null);
+  const [errore, setErrore] = useState('');
+  const [aperta, setAperta] = useState<string | null>(null);
+  useEffect(() => ascoltaArchivio(setLista, (e) => setErrore(e.message)), []);
+  if (errore) return <p className="avviso errore">Impossibile caricare l'archivio: {errore}</p>;
+  if (!lista?.length) return null;
+  return (
+    <section className="archivio">
+      <h2 className="titolo-sezione">Archivio</h2>
+      {perCartella(lista).map(([cartella, voci]) => (
+        <details key={cartella} className="cartella-soci" open={aperta === cartella || perCartella(lista).length === 1} onToggle={(e) => (e.currentTarget.open ? setAperta(cartella) : aperta === cartella && setAperta(null))}>
+          <summary>{cartella} <span className="nota">({voci.length})</span></summary>
+          <div className="lista-avvisi">
+            {voci.map((v) => (
+              <article key={v.id} className="avviso-card">
+                <h3>{v.titolo}</h3>
+                {v.descrizione && <p className="testo-a-capo">{v.descrizione}</p>}
+                <Allegati lista={[v.file]} />
+              </article>
+            ))}
+          </div>
+        </details>
+      ))}
+    </section>
   );
 }

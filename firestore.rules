@@ -270,6 +270,37 @@ service cloud.firestore {
       allow delete: if isOrg();
     }
 
+    // ---------- File (foto, PDF…) ----------
+    // Salvati in Firestore a pezzi (piano gratuito, niente Storage). I file "pubblico"
+    // (foto degli eventi, pagine pubbliche) li vede chiunque; gli altri solo soci attivi e staff.
+    function puoLeggereFile(v) { return v == 'pubblico' || socioAttivo() || isStaff(); }
+
+    match /file/{id} {
+      allow read: if puoLeggereFile(resource.data.visibilita);
+      allow create: if isOrg() && request.resource.data.visibilita in ['pubblico', 'soci']
+        && request.resource.data.parti is int && request.resource.data.parti >= 1 && request.resource.data.parti <= 20;
+      allow update: if isOrg() && request.resource.data.visibilita in ['pubblico', 'soci'];
+      allow delete: if isOrg();
+
+      match /parti/{n} {
+        allow read: if puoLeggereFile(get(/databases/$(database)/documents/file/$(id)).data.visibilita);
+        allow write: if isOrg();
+      }
+    }
+
+    // ---------- Pagine ----------
+    match /pagine/{id} {
+      allow read: if resource == null || resource.data.visibilita == 'pubblica' || isOrg()
+        || (resource.data.visibilita == 'soci' && (socioAttivo() || isStaff()));
+      allow write: if isOrg();
+    }
+
+    // ---------- Archivio soci ----------
+    match /archivio/{id} {
+      allow read: if socioAttivo() || isStaff();
+      allow write: if isOrg();
+    }
+
     // Bacheca: la leggono i soci attivi, lo staff e gli organizzatori.
     match /avvisi/{id} {
       allow read: if socioAttivo() || isStaff();

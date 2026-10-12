@@ -21,6 +21,13 @@ before(async () => {
     await setDoc(doc(db, 'soci/attesa'), { ...SOCIO, uid: 'attesa', stato: 'in_attesa' });
     await setDoc(doc(db, 'documenti/doc1'), { titolo: 'Regolamento', testo: 'Testo', attivo: true, versione: 1 });
     await setDoc(doc(db, 'documenti/nascosto'), { titolo: 'Bozza', testo: 'X', attivo: false, versione: 1 });
+    await setDoc(doc(db, 'file/pub'), { nome: 'a.jpg', tipo: 'image/jpeg', parti: 1, visibilita: 'pubblico', completo: true });
+    await setDoc(doc(db, 'file/pub/parti/0'), { dati: 'AAAA' });
+    await setDoc(doc(db, 'file/priv'), { nome: 'v.pdf', tipo: 'application/pdf', parti: 1, visibilita: 'soci', completo: true });
+    await setDoc(doc(db, 'file/priv/parti/0'), { dati: 'AAAA' });
+    await setDoc(doc(db, 'pagine/aperta'), { titolo: 'Storia', visibilita: 'pubblica' });
+    await setDoc(doc(db, 'pagine/riservata'), { titolo: 'Verbali', visibilita: 'soci' });
+    await setDoc(doc(db, 'archivio/a1'), { titolo: 'Statuto', cartella: 'Statuto' });
   });
 });
 after(async () => env?.cleanup());
@@ -64,4 +71,30 @@ test('iscrizione soci senza codice', async () => {
   };
   await assertSucceeds(setDoc(doc(db('nuovo'), 'soci/nuovo'), r));
   await assertFails(setDoc(doc(db('nuovo2'), 'soci/nuovo2'), { ...r, uid: 'nuovo2', stato: 'attivo' }));
+});
+
+test('file: pubblici a tutti, riservati solo a soci attivi e staff', async () => {
+  await assertSucceeds(getDoc(doc(db(null), 'file/pub')));
+  await assertSucceeds(getDoc(doc(db(null), 'file/pub/parti/0')));
+  await assertFails(getDoc(doc(db(null), 'file/priv')));
+  await assertFails(getDoc(doc(db(null), 'file/priv/parti/0')));
+  await assertFails(getDoc(doc(db('attesa'), 'file/priv/parti/0')));
+  await assertSucceeds(getDoc(doc(db('mario'), 'file/priv/parti/0')));
+  await assertFails(setDoc(doc(db('mario'), 'file/x'), { visibilita: 'soci', parti: 1 }));
+  await assertSucceeds(setDoc(doc(db('org'), 'file/x'), { visibilita: 'soci', parti: 1 }));
+  await assertSucceeds(setDoc(doc(db('org'), 'file/x/parti/0'), { dati: 'AAAA' }));
+});
+
+test('pagine e archivio', async () => {
+  await assertSucceeds(getDoc(doc(db(null), 'pagine/aperta')));
+  await assertSucceeds(getDoc(doc(db(null), 'pagine/home')));
+  await assertSucceeds(getDocs(query(collection(db(null), 'pagine'), where('visibilita', '==', 'pubblica'))));
+  await assertFails(getDoc(doc(db(null), 'pagine/riservata')));
+  await assertSucceeds(getDoc(doc(db('mario'), 'pagine/riservata')));
+  await assertSucceeds(getDocs(query(collection(db('mario'), 'pagine'), where('visibilita', '==', 'soci'))));
+  await assertFails(setDoc(doc(db('mario'), 'pagine/aperta'), { titolo: 'x', visibilita: 'pubblica' }));
+  await assertSucceeds(setDoc(doc(db('org'), 'pagine/nuova'), { titolo: 'x', visibilita: 'soci' }));
+  await assertFails(getDocs(collection(db('attesa'), 'archivio')));
+  await assertSucceeds(getDocs(collection(db('mario'), 'archivio')));
+  await assertFails(setDoc(doc(db('mario'), 'archivio/x'), { titolo: 'x' }));
 });

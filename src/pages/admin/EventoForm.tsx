@@ -4,6 +4,9 @@ import { Timestamp } from 'firebase/firestore';
 import { ascoltaEvento, salvaEvento, type DatiEvento } from '../../lib/dati';
 import { perInputDataOra } from '../../lib/format';
 import { Icona } from '../../components/Icona';
+import { ModificaAllegati } from '../../components/File';
+import { EditorTesto } from '../../components/TestoRicco';
+import { eliminaFiles, type RifFile } from '../../lib/file';
 import type { Evento, IconaEvento, Pubblico, StatoEvento, TipoEvento } from '../../types';
 
 // Verde e giallo sociali per primi, poi tinte che stanno bene accanto.
@@ -21,6 +24,7 @@ interface Bozza {
   icona: IconaEvento;
   colore: string;
   locandina: string | null;
+  galleria: RifFile[];
   prezzo: string;
   stato: StatoEvento;
   postiMax: number;
@@ -41,6 +45,7 @@ const vuota: Bozza = {
   icona: 'pasto',
   colore: COLORI[0],
   locandina: null,
+  galleria: [],
   prezzo: '',
   stato: 'bozza',
   postiMax: 60,
@@ -62,6 +67,7 @@ function daEvento(ev: Evento): Bozza {
     icona: ev.icona,
     colore: ev.colore,
     locandina: ev.locandina,
+    galleria: ev.galleria ?? [],
     prezzo: ev.prezzo,
     stato: ev.stato,
     postiMax: ev.postiMax,
@@ -125,6 +131,7 @@ export function EventoForm() {
       icona: b.icona,
       colore: b.colore,
       locandina: b.locandina,
+      galleria: b.galleria,
       prezzo: b.prezzo.trim(),
       stato: b.stato,
       postiMax: b.postiMax,
@@ -135,6 +142,7 @@ export function EventoForm() {
     setSalvo(true);
     try {
       await salvaEvento(nuovo ? null : id!, dati);
+      await eliminaFiles((originale?.galleria ?? []).filter((f) => !b.galleria.some((x) => x.id === f.id)).map((f) => f.id));
       navigate('/admin');
     } catch (err) {
       setErrore(err instanceof Error ? err.message : 'Salvataggio non riuscito.');
@@ -174,7 +182,8 @@ export function EventoForm() {
           <fieldset>
             <legend>Informazioni</legend>
             <label>Titolo<input value={b.titolo} onChange={(e) => set('titolo', e.target.value)} required maxLength={80} /></label>
-            <label>Descrizione<textarea rows={4} value={b.descrizione} onChange={(e) => set('descrizione', e.target.value)} maxLength={1500} /></label>
+            <div className="etichetta-campo">Descrizione</div>
+            <EditorTesto etichetta="Descrizione dell'evento" valore={b.descrizione} onChange={(v) => setB((x) => (x ? { ...x, descrizione: v } : x))} righe={6} max={6000} />
             <label>Data e ora<input type="datetime-local" value={b.data} onChange={(e) => set('data', e.target.value)} required /></label>
             <label>Luogo<input value={b.luogo} onChange={(e) => set('luogo', e.target.value)} maxLength={80} /></label>
             <label>Prezzo (facoltativo)<input value={b.prezzo} onChange={(e) => set('prezzo', e.target.value)} placeholder="es. 15 € adulti, 8 € bambini" maxLength={60} /></label>
@@ -211,7 +220,7 @@ export function EventoForm() {
           )}
 
           <fieldset>
-            <legend>Aspetto</legend>
+            <legend>Aspetto, locandina e foto</legend>
             <div className="etichetta-campo">Colore</div>
             <div className="colori">
               {COLORI.map((c) => (
@@ -235,6 +244,8 @@ export function EventoForm() {
                 <button type="button" className="link-bottone" onClick={() => set('locandina', null)}>Rimuovi locandina</button>
               </div>
             )}
+            <div className="etichetta-campo">Altre foto (galleria nella pagina dell'evento)</div>
+            <ModificaAllegati valore={b.galleria} onChange={(galleria) => setB((x) => (x ? { ...x, galleria } : x))} visibilita="pubblico" soloImmagini etichetta="+ Aggiungi foto" max={30} salvati={originale?.galleria} />
           </fieldset>
 
           <fieldset>

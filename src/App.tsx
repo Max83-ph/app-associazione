@@ -7,6 +7,7 @@ import { Home } from './pages/Home';
 import { EventoPagina } from './pages/EventoPagina';
 import { Accesso } from './pages/Accesso';
 import { Carnevale, Info } from './pages/Statiche';
+import { PaginaLibera } from './pages/Pagine';
 
 // Le pagine pesanti (QR, PDF, fotocamera, gestione) si caricano solo quando servono.
 const Biglietto = lazy(() => import('./pages/Biglietto').then((m) => ({ default: m.Biglietto })));
@@ -22,6 +23,9 @@ const NuovoSocio = lazy(() => import('./pages/admin/SocioDettaglio').then((m) =>
 const GestioneBacheca = lazy(() => import('./pages/admin/GestioneBacheca').then((m) => ({ default: m.GestioneBacheca })));
 const GestioneTesti = lazy(() => import('./pages/admin/GestioneTesti').then((m) => ({ default: m.GestioneTesti })));
 const GestioneDocumenti = lazy(() => import('./pages/admin/GestioneDocumenti').then((m) => ({ default: m.GestioneDocumenti })));
+const GestionePagine = lazy(() => import('./pages/admin/GestionePagine').then((m) => ({ default: m.GestionePagine })));
+const ModificaPagina = lazy(() => import('./pages/admin/GestionePagine').then((m) => ({ default: m.ModificaPagina })));
+const GestioneArchivio = lazy(() => import('./pages/admin/GestioneArchivio').then((m) => ({ default: m.GestioneArchivio })));
 const Ingresso = lazy(() => import('./pages/staff/Ingresso').then((m) => ({ default: m.Ingresso })));
 function Protetta({ livello, children }: { livello: 'staff' | 'organizzatore'; children: ReactNode }) {
   const { caricamento, isStaff, isOrganizzatore } = useAuth();
@@ -44,6 +48,7 @@ export default function App() {
             <Route path="soci" element={<AreaSoci />} />
             <Route path="soci/iscrizione" element={<Iscrizione />} />
             <Route path="info" element={<Info />} />
+            <Route path="pagina/:id" element={<PaginaLibera />} />
             <Route path="chi-siamo" element={<Navigate to="/info" replace />} />
             <Route path="contatti" element={<Navigate to="/info" replace />} />
             <Route path="accesso" element={<Accesso />} />
@@ -57,6 +62,9 @@ export default function App() {
             <Route path="admin/bacheca" element={<Protetta livello="organizzatore"><GestioneBacheca /></Protetta>} />
             <Route path="admin/testi" element={<Protetta livello="organizzatore"><GestioneTesti /></Protetta>} />
             <Route path="admin/documenti" element={<Protetta livello="organizzatore"><GestioneDocumenti /></Protetta>} />
+            <Route path="admin/pagine" element={<Protetta livello="organizzatore"><GestionePagine /></Protetta>} />
+            <Route path="admin/pagine/:id" element={<Protetta livello="organizzatore"><ModificaPagina /></Protetta>} />
+            <Route path="admin/archivio" element={<Protetta livello="organizzatore"><GestioneArchivio /></Protetta>} />
           </Route>
           <Route path="biglietto/:codice" element={<Biglietto />} />
           <Route path="staff" element={<Protetta livello="staff"><Ingresso /></Protetta>} />

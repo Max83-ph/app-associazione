@@ -1,15 +1,20 @@
 import { Intestazione } from '../components/Layout';
 import { useTesti } from '../lib/testi';
+import { Testo } from '../components/TestoRicco';
+import { ContenutoPagina, ElencoPagine, usePagina, usePagineLibere } from './Pagine';
 
 export function Info() {
   const { chiSiamo } = useTesti();
+  const info = usePagina('info');
+  const altre = usePagineLibere('pubblica');
   return (
     <>
       <Intestazione titolo="Chi siamo" />
       <main className="contenuto testo-lungo">
-        <p className="testo-a-capo">{chiSiamo}</p>
+        {info ? <ContenutoPagina p={info} /> : info === null && <Testo testo={chiSiamo} />}
         <h2 className="titolo-sezione">Contatti</h2>
         <Contatti />
+        <ElencoPagine lista={altre} titolo="Altre pagine" />
       </main>
     </>
   );
@@ -43,17 +48,20 @@ function Contatti() {
 }
 
 export function Carnevale() {
+  const p = usePagina('carnevale');
   return (
     <>
       <Intestazione titolo="Carnevale" />
       <main className="contenuto testo-lungo">
-        <div className="pannello">
+        {p === undefined && <p className="vuoto">Caricamento…</p>}
+        {p && <ContenutoPagina p={p} />}
+        {p === null && <div className="pannello">
           <h2>In arrivo</h2>
           <p>
             Qui le famiglie potranno iscrivere i figuranti alla sfilata, firmare i documenti e prenotare la prova abito,
             tutto dal telefono.
           </p>
-        </div>
+        </div>}
       </main>
     </>
   );

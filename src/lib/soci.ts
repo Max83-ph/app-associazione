@@ -14,6 +14,7 @@ import {
 import { db } from '../firebase';
 import type { Avviso, DatiSocio, StatoSocio, Socio, Tessera } from '../types';
 import { normalizzaCF } from './codiceFiscale';
+import { eliminaFiles, type RifFile } from './file';
 
 const soci = collection(db, 'soci');
 const avvisi = collection(db, 'avvisi');
@@ -156,14 +157,19 @@ export function ascoltaAvvisi(cb: (a: Avviso[]) => void, err: (e: Error) => void
   );
 }
 
-export async function salvaAvviso(id: string | null, a: { titolo: string; testo: string; inEvidenza: boolean }, autore: string) {
-  const dati = { titolo: a.titolo.trim(), testo: a.testo.trim(), inEvidenza: a.inEvidenza };
-  if (id) await updateDoc(doc(avvisi, id), dati);
+export interface DatiAvviso { titolo: string; testo: string; inEvidenza: boolean; allegati: RifFile[] }
+
+/** Salva l'avviso; i file tolti durante la modifica vengono eliminati dall'archivio. */
+export async function salvaAvviso(id: string | null, a: DatiAvviso, autore: string, prima: RifFile[] = []) {
+  const dati = { titolo: a.titolo.trim(), testo: a.testo.trim(), inEvidenza: a.inEvidenza, allegati: a.allegati };
+  if (id) await updateDoc(doc(avvisi, id), { ...dati, modificatoIl: serverTimestamp() });
   else await addDoc(avvisi, { ...dati, autore, createdAt: serverTimestamp() });
+  await eliminaFiles(prima.filter((f) => !a.allegati.some((x) => x.id === f.id)).map((f) => f.id));
 }
 
-export async function eliminaAvviso(id: string) {
-  await deleteDoc(doc(avvisi, id));
+export async function eliminaAvviso(a: Avviso) {
+  await deleteDoc(doc(avvisi, a.id));
+  await eliminaFiles((a.allegati ?? []).map((f) => f.id));
 }
 
 // ---------- Iscrizione online: link dedicato + codice ----------

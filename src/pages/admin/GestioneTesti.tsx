@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../lib/auth';
 import { salvaTesti, TESTI_PREDEFINITI, useTesti, type Contatti, type Testi } from '../../lib/testi';
 import { Icona } from '../../components/Icona';
+import { EditorTesto } from '../../components/TestoRicco';
 
 type CampoTesto = Exclude<keyof Testi, 'contatti'>;
 
 const TESTI: { chiave: CampoTesto; titolo: string; dove: string }[] = [
-  { chiave: 'chiSiamo', titolo: 'Chi siamo', dove: 'Pagina Info, in alto.' },
   { chiave: 'informativaSoci', titolo: 'Informativa privacy soci', dove: 'Modulo di iscrizione soci e PDF della domanda firmata.' },
   { chiave: 'liberatoriaSoci', titolo: 'Liberatoria foto e video soci', dove: 'Modulo di iscrizione soci e PDF della domanda firmata.' },
   { chiave: 'informativaPrivacy', titolo: 'Informativa privacy eventi', dove: 'Iscrizione agli eventi e PDF dei laboratori firmati.' },
@@ -65,18 +65,13 @@ export function GestioneTesti() {
           Le modifiche valgono subito per le nuove iscrizioni. Le firme già raccolte restano valide; i PDF che scarichi dopo
           una modifica riportano il testo nuovo, quindi cambia informative e liberatorie solo quando serve davvero.
         </p>
+        <p className="nota">Il testo "Chi siamo" e le altre pagine si modificano da <Link to="/admin/pagine">Gestione → Pagine</Link>.</p>
         <form className="modulo" onSubmit={salva}>
           {TESTI.map((t) => (
             <fieldset key={t.chiave}>
               <legend>{t.titolo}</legend>
               <span className="nota">{t.dove}</span>
-              <textarea
-                rows={t.chiave === 'chiSiamo' ? 6 : 9}
-                value={bozza[t.chiave]}
-                maxLength={20000}
-                onChange={(e) => setTesto(t.chiave, e.target.value)}
-                aria-label={t.titolo}
-              />
+              <EditorTesto etichetta={t.titolo} valore={bozza[t.chiave]} onChange={(v) => setTesto(t.chiave, v)} righe={9} />
               {bozza[t.chiave] !== TESTI_PREDEFINITI[t.chiave] && (
                 <button type="button" className="link-bottone" onClick={() => setTesto(t.chiave, TESTI_PREDEFINITI[t.chiave])}>
                   Ripristina il testo iniziale

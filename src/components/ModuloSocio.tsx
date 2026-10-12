@@ -3,6 +3,7 @@ import { Firma } from './Firma';
 import { erroreCF, normalizzaCF } from '../lib/codiceFiscale';
 import { NOME_COMITATO } from '../config';
 import { useTesti } from '../lib/testi';
+import { Testo } from './TestoRicco';
 import type { DatiSocio } from '../types';
 
 export const SOCIO_VUOTO: DatiSocio = {
@@ -144,7 +145,7 @@ export function ModuloSocio({ iniziale, chi, firmaEsistente, etichettaInvio, onI
         <legend>Documenti</legend>
         <details className="documento">
           <summary>Leggi l'informativa privacy</summary>
-          <p>{testi.informativaSoci}</p>
+          <Testo testo={testi.informativaSoci} />
         </details>
         <label className="spunta">
           <input type="checkbox" checked={d.consensi.privacy} onChange={(e) => setCons('privacy', e.target.checked)} />
@@ -154,7 +155,7 @@ export function ModuloSocio({ iniziale, chi, firmaEsistente, etichettaInvio, onI
         <div className="liberatoria">
           <details className="documento">
             <summary>Liberatoria foto e video per tutti gli eventi del Gruppo</summary>
-            <p>{testi.liberatoriaSoci}</p>
+            <Testo testo={testi.liberatoriaSoci} />
           </details>
           <div className="griglia-2">
             <button type="button" className={sceltaFoto === true ? 'scelta attiva' : 'scelta'} aria-pressed={sceltaFoto === true} onClick={() => setSceltaFoto(true)}>Acconsento</button>

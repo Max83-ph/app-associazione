@@ -19,6 +19,7 @@ import {
 import type { jsPDF as JsPDF } from 'jspdf';
 import { db } from '../firebase';
 import { NOME_ASSOCIAZIONE } from '../config';
+import { testoSemplice } from './testi';
 import type { DocumentoFirma, FirmaDocumento, Socio } from '../types';
 
 const documenti = collection(db, 'documenti');
@@ -149,7 +150,7 @@ function paginaFirma(pdf: JsPDF, f: FirmaDocumento, documentoModificato: boolean
   pdf.rect(0, 2.5, w, 2.5, 'F');
   scrivi(NOME_ASSOCIAZIONE, 14, 'bold', 1);
   scrivi(f.titolo, 12, 'bold', 5);
-  if (f.testo) scrivi(f.testo, 10, 'normal', 5);
+  if (f.testo) scrivi(testoSemplice(f.testo), 10, 'normal', 5);
   if (f.pdfNome) scrivi(`Il firmatario dichiara di aver letto il documento allegato "${f.pdfNome}"${f.testo ? '' : ', riportato nelle pagine precedenti'}.`, 10, 'normal', 5);
   if (documentoModificato) scrivi('Attenzione: il documento è stato modificato dopo questa firma. Le pagine allegate sono quelle della versione attuale.', 9, 'bold', 4);
   scrivi(`Firmatario: ${f.nome} ${f.cognome}${f.codiceFiscale ? `, codice fiscale ${f.codiceFiscale}` : ''}`, 10, 'normal', 1);

@@ -16,6 +16,8 @@ import {
 } from '../../lib/documenti';
 import { ascoltaSoci } from '../../lib/soci';
 import { Icona } from '../../components/Icona';
+import { EditorTesto } from '../../components/TestoRicco';
+import { testoSemplice } from '../../lib/testi';
 import type { DocumentoFirma, FirmaDocumento, Socio } from '../../types';
 
 const VUOTO: DatiDocumento = { titolo: '', testo: '', pdf: null, pdfNome: null, attivo: true };
@@ -88,10 +90,9 @@ export function GestioneDocumenti() {
           <fieldset>
             <legend>{inModifica ? 'Modifica documento' : 'Nuovo documento'}</legend>
             <label>Titolo<input value={bozza.titolo} maxLength={120} onChange={(e) => setBozza({ ...bozza, titolo: e.target.value })} placeholder="es. Regolamento sfilata 2027" /></label>
-            <label>Testo da firmare
-              <textarea rows={8} value={bozza.testo} maxLength={20000} onChange={(e) => setBozza({ ...bozza, testo: e.target.value })} />
+            <div className="etichetta-campo">Testo da firmare</div>
+              <EditorTesto etichetta="Testo da firmare" valore={bozza.testo} onChange={(testo) => setBozza((b) => ({ ...b, testo }))} />
               <span className="nota">Facoltativo se alleghi un PDF: in quel caso scrivi qui una breve dichiarazione, es. "Dichiaro di aver letto e accettato il regolamento allegato".</span>
-            </label>
             <div className="file-pdf">
               {bozza.pdf ? (
                 <>
@@ -126,7 +127,7 @@ export function GestioneDocumenti() {
                 <span>versione {d.versione}</span>
               </div>
               <h2>{d.titolo}</h2>
-              {d.testo && <p className="testo-a-capo">{d.testo.length > 280 ? d.testo.slice(0, 280) + '…' : d.testo}</p>}
+              {d.testo && <p className="testo-a-capo">{testoSemplice(d.testo.length > 280 ? d.testo.slice(0, 280) + '…' : d.testo)}</p>}
               <div className="riga-azioni">
                 <button type="button" className="mini" onClick={() => setAperto(aperto === d.id ? null : d.id)}>{aperto === d.id ? 'Chiudi firme' : 'Vedi firme'}</button>
                 {d.pdf && <button type="button" className="mini" onClick={() => apriPdf(d)}>Apri PDF</button>}

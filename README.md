@@ -20,7 +20,9 @@ Gira interamente sul **piano gratuito Firebase (Spark)**: niente Cloud Functions
 | Gestione soci: approvazioni, tessere, Excel, PDF firmati, codice e QR di iscrizione | `/admin/soci` | Organizzatori |
 | Bacheca soci: avvisi e news | `/admin/bacheca` | Organizzatori |
 | Documenti da firmare (testo e/o PDF), firme raccolte e PDF firmati | `/admin/documenti` | Organizzatori |
-| Testi e contatti: chi siamo, informative, liberatorie | `/admin/testi` | Organizzatori |
+| Informative, liberatorie e contatti | `/admin/testi` | Organizzatori |
+| Pagine: Home, Carnevale, Chi siamo e pagine nuove (pubbliche o solo soci), con foto e file | `/admin/pagine` | Organizzatori |
+| Archivio soci a cartelle (statuto, verbali, moduli) | `/admin/archivio` | Organizzatori |
 
 ## Pubblicazione automatica
 
@@ -72,3 +74,7 @@ Si aggiungono, senza riscrivere l'app:
 
 - Cloud Functions per l'email automatica del biglietto e il controllo posti lato server.
 - Storage per locandine e PDF firmati (ora salvati leggeri nel database).
+
+## File senza Storage
+
+Foto e file (bacheca, galleria eventi, pagine, archivio) sono salvati in Firestore, spezzati in parti da ~700 KB (`file/{id}` + `file/{id}/parti/{n}`), fino a 8 MB per file; le foto vengono ridotte a 1600 px. Il piano gratuito offre 1 GB di database: centinaia di foto e documenti. Con il piano Blaze si potrà passare a Storage cambiando solo `src/lib/file.ts`.

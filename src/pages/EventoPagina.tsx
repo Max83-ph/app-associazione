@@ -8,6 +8,8 @@ import { Copertina, scurisci } from '../components/CardEvento';
 import { Icona } from '../components/Icona';
 import { Firma } from '../components/Firma';
 import { useTesti } from '../lib/testi';
+import { Testo } from '../components/TestoRicco';
+import { Allegati } from '../components/File';
 
 export function EventoPagina() {
   const { id = '' } = useParams();
@@ -43,7 +45,8 @@ export function EventoPagina() {
             {ev.prezzo && <span>{ev.prezzo}</span>}
           </div>
         </div>
-        {ev.descrizione && <p className="descrizione">{ev.descrizione}</p>}
+        <Testo testo={ev.descrizione} className="descrizione-evento" />
+        <Allegati lista={ev.galleria} />
         {errore && <p className="avviso errore">{errore}</p>}
         {aperte ? (
           <ModuloIscrizione ev={ev} onErrore={setErrore} />
@@ -213,7 +216,7 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
         <legend>Documenti</legend>
         <details className="documento">
           <summary>Leggi l'informativa privacy</summary>
-          <p>{testi.informativaPrivacy}</p>
+          <Testo testo={testi.informativaPrivacy} />
         </details>
         <label className="spunta">
           <input type="checkbox" checked={privacy} onChange={(e) => setPrivacy(e.target.checked)} />
@@ -224,7 +227,7 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
           <div className="liberatoria">
             <details className="documento">
               <summary>Liberatoria foto e video</summary>
-              <p>{testi.liberatoriaFoto}</p>
+              <Testo testo={testi.liberatoriaFoto} />
             </details>
             <div className="griglia-2">
               <button type="button" className={liberatoria === true ? 'scelta attiva' : 'scelta'} aria-pressed={liberatoria === true} onClick={() => setLiberatoria(true)}>Acconsento</button>

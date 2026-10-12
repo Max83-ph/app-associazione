@@ -1,4 +1,5 @@
 import type { Timestamp } from 'firebase/firestore';
+import type { RifFile } from './lib/file';
 
 export type TipoEvento = 'pasto' | 'laboratorio' | 'tema';
 export type Pubblico = 'adulti' | 'bambini' | 'famiglie';
@@ -24,6 +25,8 @@ export interface Evento {
   colore: string;
   /** Immagine ridotta salvata come data URL (piano gratuito, niente Storage). */
   locandina: string | null;
+  /** Altre foto dell'evento (pubbliche). */
+  galleria?: RifFile[];
   prezzo: string;
   stato: StatoEvento;
   visibile: boolean;
@@ -132,8 +135,12 @@ export interface Socio extends DatiSocio {
 export interface Avviso {
   id: string;
   titolo: string;
+  /** Testo formattato (Markdown semplice). */
   testo: string;
   inEvidenza: boolean;
+  /** Foto e file allegati (visibili ai soci). */
+  allegati?: RifFile[];
+  modificatoIl?: Timestamp;
   createdAt: Timestamp;
   autore: string;
 }

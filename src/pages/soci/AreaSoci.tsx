@@ -18,6 +18,8 @@ import {
 } from '../../lib/soci';
 import { pdfSocio } from '../../lib/esportaSoci';
 import { DocumentiSoci, useDocumentiSocio } from './Documenti';
+import { Testo } from '../../components/TestoRicco';
+import { Allegati } from '../../components/File';
 import { Intestazione } from '../../components/Layout';
 import { ModuloSocio, SOCIO_VUOTO } from '../../components/ModuloSocio';
 import { NOME_COMITATO } from '../../config';
@@ -251,7 +253,8 @@ function Bacheca() {
             {a.createdAt?.toDate().toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
           </div>
           <h2>{a.titolo}</h2>
-          <p>{a.testo}</p>
+          <Testo testo={a.testo} />
+          <Allegati lista={a.allegati} />
         </article>
       ))}
     </div>

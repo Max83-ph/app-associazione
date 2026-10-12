@@ -3,6 +3,7 @@ import { Intestazione } from '../components/Layout';
 import { CardEvento } from '../components/CardEvento';
 import { ascoltaEventiPubblici } from '../lib/dati';
 import type { Evento } from '../types';
+import { ContenutoPagina, usePagina } from './Pagine';
 
 type Filtro = 'tutti' | 'pasti' | 'bambini' | 'laboratori';
 
@@ -17,6 +18,7 @@ export function Home() {
   const [eventi, setEventi] = useState<Evento[] | null>(null);
   const [errore, setErrore] = useState('');
   const [filtro, setFiltro] = useState<Filtro>('tutti');
+  const intro = usePagina('home');
 
   useEffect(() => ascoltaEventiPubblici(setEventi, (e) => setErrore(e.message)), []);
 
@@ -50,6 +52,9 @@ export function Home() {
         </div>
       </Intestazione>
       <main className="contenuto">
+        {intro && (intro.contenuto || intro.allegati.length > 0) && (
+          <section className="pannello intro-home"><ContenutoPagina p={intro} /></section>
+        )}
         {errore && <p className="avviso errore">Impossibile caricare gli eventi: {errore}</p>}
         {eventi === null && !errore && <p className="vuoto">Caricamento…</p>}
         {eventi !== null && visibili.length === 0 && (

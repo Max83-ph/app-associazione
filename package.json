@@ -13,9 +13,11 @@
   },
   "dependencies": {
     "@fontsource-variable/instrument-sans": "^5.3.0",
+    "dompurify": "^3.4.17",
     "exceljs": "^4.4.0",
     "firebase": "^12.19.0",
     "jspdf": "^4.2.1",
+    "marked": "^16.4.2",
     "pdf-lib": "^1.17.1",
     "qr-scanner": "^1.4.2",
     "qrcode": "^1.5.4",

@@ -88,3 +88,14 @@ export const useTesti = () => useContext(Ctx);
 export async function salvaTesti(t: Testi, autore: string) {
   await setDoc(rif, { ...t, aggiornatoDa: autore, aggiornatoIl: serverTimestamp() });
 }
+
+/** Toglie la formattazione Markdown, per i PDF. */
+export function testoSemplice(md: string): string {
+  return md
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 ($2)')
+    .replace(/(\*\*|__)(.+?)\1/g, '$2')
+    .replace(/(^|[\s(])[*_](\S(?:.*?\S)?)[*_](?=[\s).,;:!?]|$)/gm, '$1$2')
+    .replace(/^\s*[-*]\s+/gm, '• ')
+    .replace(/^>\s?/gm, '');
+}

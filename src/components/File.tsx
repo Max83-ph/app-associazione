@@ -147,7 +147,7 @@ export function ModificaAllegati({
       )}
       <span className="nota">
         {soloImmagini ? 'Le foto vengono ridotte automaticamente.' : `Foto, PDF, Word, Excel… fino a ${dimensioneLeggibile(8 * 1024 * 1024)} per file; le foto vengono ridotte automaticamente.`}
-        {visibilita === 'soci' ? ' Visibili solo ai soci.' : ' Visibili a tutti.'}
+        {visibilita === 'soci' ? ' Visibili solo ai soci.' : visibilita === 'link' ? ' Visibili a chi ha il link della pagina.' : ' Visibili a tutti.'}
       </span>
       {errore && <p className="avviso errore">{errore}</p>}
     </div>

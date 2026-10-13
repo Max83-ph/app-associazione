@@ -295,13 +295,16 @@ service cloud.firestore {
     // ---------- File (foto, PDF…) ----------
     // Salvati in Firestore a pezzi (piano gratuito, niente Storage). I file "pubblico"
     // (foto degli eventi, pagine pubbliche) li vede chiunque; gli altri solo soci attivi e staff.
-    function puoLeggereFile(v) { return v == 'pubblico' || socioAttivo() || isStaff(); }
+    // "link": file delle pagine comunicazioni, leggibili da chi ne conosce l'ID (casuale),
+    // ma non elencabili da nessuno tranne gli organizzatori.
+    function puoLeggereFile(v) { return v == 'pubblico' || v == 'link' || socioAttivo() || isStaff(); }
 
     match /file/{id} {
-      allow read: if puoLeggereFile(resource.data.visibilita);
-      allow create: if isOrg() && request.resource.data.visibilita in ['pubblico', 'soci']
+      allow get: if puoLeggereFile(resource.data.visibilita);
+      allow list: if isOrg() || resource.data.visibilita == 'pubblico' || (resource.data.visibilita == 'soci' && (socioAttivo() || isStaff()));
+      allow create: if isOrg() && request.resource.data.visibilita in ['pubblico', 'soci', 'link']
         && request.resource.data.parti is int && request.resource.data.parti >= 1 && request.resource.data.parti <= 20;
-      allow update: if isOrg() && request.resource.data.visibilita in ['pubblico', 'soci'];
+      allow update: if isOrg() && request.resource.data.visibilita in ['pubblico', 'soci', 'link'];
       allow delete: if isOrg();
 
       match /parti/{n} {
@@ -321,6 +324,23 @@ service cloud.firestore {
     match /archivio/{id} {
       allow read: if socioAttivo() || isStaff();
       allow write: if isOrg();
+    }
+
+    // ---------- Pagine comunicazioni con codice ----------
+    // L'ID del documento è il codice (almeno 8 caratteri): chi lo conosce legge la pagina
+    // se è attiva, nessuno può elencarle tranne gli organizzatori.
+    match /comunicazioni/{codice} {
+      allow get: if isOrg() || resource.data.attiva == true;
+      allow list: if isOrg();
+      allow create, update: if isOrg() && codice.matches('^[A-Z0-9]{8,30}$')
+        && request.resource.data.titolo is string && request.resource.data.titolo.size() > 0 && request.resource.data.titolo.size() <= 80
+        && request.resource.data.attiva is bool;
+      allow delete: if isOrg();
+
+      match /messaggi/{m} {
+        allow read: if isOrg() || get(/databases/$(database)/documents/comunicazioni/$(codice)).data.attiva == true;
+        allow write: if isOrg();
+      }
     }
 
     // Bacheca: la leggono i soci attivi, lo staff e gli organizzatori.

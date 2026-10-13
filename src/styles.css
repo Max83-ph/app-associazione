@@ -536,3 +536,4 @@ input:focus, select:focus, textarea:focus { border-color: var(--verde); outline:
 .elenco-import.errori li { border-color: #ecc9bd; background: #fdf6f3; }
 .elenco-import.errori span { color: #8a3a22; }
 .pannello-spunta { padding: 12px 14px; border: 1px solid var(--linea); border-radius: 12px; background: var(--bianco); }
+.riga-codice { display: flex; gap: 8px; } .riga-codice input { flex: 1; min-width: 0; }

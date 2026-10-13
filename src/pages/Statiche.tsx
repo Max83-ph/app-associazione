@@ -2,6 +2,7 @@ import { Intestazione } from '../components/Layout';
 import { useTesti } from '../lib/testi';
 import { Testo } from '../components/TestoRicco';
 import { ContenutoPagina, ElencoPagine, usePagina, usePagineLibere } from './Pagine';
+import { InserisciCodice } from './Comunicazioni';
 
 export function Info() {
   const { chiSiamo } = useTesti();
@@ -15,6 +16,7 @@ export function Info() {
         <h2 className="titolo-sezione">Contatti</h2>
         <Contatti />
         <ElencoPagine lista={altre} titolo="Altre pagine" />
+        <InserisciCodice />
       </main>
     </>
   );

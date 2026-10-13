@@ -25,6 +25,7 @@ Gira interamente sul **piano gratuito Firebase (Spark)**: niente Cloud Functions
 | Informative, liberatorie e contatti | `/admin/testi` | Organizzatori |
 | Pagine: Home, Carnevale, Chi siamo e pagine nuove (pubbliche o solo soci), con foto e file | `/admin/pagine` | Organizzatori |
 | Archivio soci a cartelle (statuto, verbali, moduli) | `/admin/archivio` | Organizzatori |
+| Comunicazioni con link: pagine di avvisi al volo per chi ha link o codice | `/admin/comunicazioni`, `/c/:codice` | Organizzatori / chi ha il link |
 
 ## Pubblicazione automatica
 

@@ -8,6 +8,7 @@ import { EventoPagina } from './pages/EventoPagina';
 import { Accesso } from './pages/Accesso';
 import { Carnevale, Info } from './pages/Statiche';
 import { PaginaLibera } from './pages/Pagine';
+import { PaginaComunicazioniPubblica } from './pages/Comunicazioni';
 
 // Le pagine pesanti (QR, PDF, fotocamera, gestione) si caricano solo quando servono.
 const Biglietto = lazy(() => import('./pages/Biglietto').then((m) => ({ default: m.Biglietto })));
@@ -27,6 +28,8 @@ const GestionePagine = lazy(() => import('./pages/admin/GestionePagine').then((m
 const ModificaPagina = lazy(() => import('./pages/admin/GestionePagine').then((m) => ({ default: m.ModificaPagina })));
 const GestioneArchivio = lazy(() => import('./pages/admin/GestioneArchivio').then((m) => ({ default: m.GestioneArchivio })));
 const ImportaSoci = lazy(() => import('./pages/admin/ImportaSoci').then((m) => ({ default: m.ImportaSoci })));
+const GestioneComunicazioni = lazy(() => import('./pages/admin/GestioneComunicazioni').then((m) => ({ default: m.GestioneComunicazioni })));
+const ModificaComunicazioni = lazy(() => import('./pages/admin/GestioneComunicazioni').then((m) => ({ default: m.ModificaComunicazioni })));
 const Ingresso = lazy(() => import('./pages/staff/Ingresso').then((m) => ({ default: m.Ingresso })));
 function Protetta({ livello, children }: { livello: 'staff' | 'organizzatore'; children: ReactNode }) {
   const { caricamento, isStaff, isOrganizzatore } = useAuth();
@@ -50,6 +53,7 @@ export default function App() {
             <Route path="soci/iscrizione" element={<Iscrizione />} />
             <Route path="info" element={<Info />} />
             <Route path="pagina/:id" element={<PaginaLibera />} />
+            <Route path="c/:codice" element={<PaginaComunicazioniPubblica />} />
             <Route path="chi-siamo" element={<Navigate to="/info" replace />} />
             <Route path="contatti" element={<Navigate to="/info" replace />} />
             <Route path="accesso" element={<Accesso />} />
@@ -66,6 +70,8 @@ export default function App() {
             <Route path="admin/documenti" element={<Protetta livello="organizzatore"><GestioneDocumenti /></Protetta>} />
             <Route path="admin/pagine" element={<Protetta livello="organizzatore"><GestionePagine /></Protetta>} />
             <Route path="admin/pagine/:id" element={<Protetta livello="organizzatore"><ModificaPagina /></Protetta>} />
+            <Route path="admin/comunicazioni" element={<Protetta livello="organizzatore"><GestioneComunicazioni /></Protetta>} />
+            <Route path="admin/comunicazioni/:codice" element={<Protetta livello="organizzatore"><ModificaComunicazioni /></Protetta>} />
             <Route path="admin/archivio" element={<Protetta livello="organizzatore"><GestioneArchivio /></Protetta>} />
           </Route>
           <Route path="biglietto/:codice" element={<Biglietto />} />

@@ -6,7 +6,8 @@
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export type Visibilita = 'pubblico' | 'soci';
+/** pubblico: chiunque; soci: soci attivi e staff; link: chi conosce il file (pagine comunicazioni con codice). */
+export type Visibilita = 'pubblico' | 'soci' | 'link';
 
 export interface RifFile {
   id: string;

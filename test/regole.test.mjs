@@ -129,3 +129,30 @@ test('pagine e archivio', async () => {
   await assertSucceeds(getDocs(collection(db('mario'), 'archivio')));
   await assertFails(setDoc(doc(db('mario'), 'archivio/x'), { titolo: 'x' }));
 });
+
+test('comunicazioni con codice: si leggono solo conoscendo il codice', async () => {
+  await env.withSecurityRulesDisabled(async (c) => {
+    const d = c.firestore();
+    await setDoc(doc(d, 'comunicazioni/ABCD2345XY'), { titolo: 'Figuranti', attiva: true });
+    await setDoc(doc(d, 'comunicazioni/ABCD2345XY/messaggi/m1'), { testo: 'Prova abiti giovedì' });
+    await setDoc(doc(d, 'comunicazioni/CHIUSA2345'), { titolo: 'Vecchia', attiva: false });
+    await setDoc(doc(d, 'comunicazioni/CHIUSA2345/messaggi/m1'), { testo: 'x' });
+    await setDoc(doc(d, 'file/lnk'), { nome: 'a.pdf', visibilita: 'link', parti: 1 });
+    await setDoc(doc(d, 'file/lnk/parti/0'), { dati: 'AAAA' });
+  });
+  await assertSucceeds(getDoc(doc(db(null), 'comunicazioni/ABCD2345XY')));
+  await assertSucceeds(getDocs(collection(db(null), 'comunicazioni/ABCD2345XY/messaggi')));
+  await assertFails(getDocs(collection(db(null), 'comunicazioni')));
+  await assertFails(getDocs(collection(db('mario'), 'comunicazioni')));
+  await assertFails(getDoc(doc(db(null), 'comunicazioni/CHIUSA2345')));
+  await assertFails(getDocs(collection(db(null), 'comunicazioni/CHIUSA2345/messaggi')));
+  await assertFails(setDoc(doc(db(null), 'comunicazioni/ABCD2345XY/messaggi/m2'), { testo: 'spam' }));
+  await assertFails(setDoc(doc(db('org'), 'comunicazioni/CORTO'), { titolo: 'x', attiva: true }));
+  await assertSucceeds(setDoc(doc(db('org'), 'comunicazioni/NUOVA23456'), { titolo: 'Cucina', attiva: true }));
+  await assertSucceeds(getDocs(collection(db('org'), 'comunicazioni')));
+  // File "link": si leggono con l'ID, ma non si possono elencare.
+  await assertSucceeds(getDoc(doc(db(null), 'file/lnk')));
+  await assertSucceeds(getDoc(doc(db(null), 'file/lnk/parti/0')));
+  await assertFails(getDocs(query(collection(db(null), 'file'), where('visibilita', '==', 'link'))));
+  await assertSucceeds(getDocs(query(collection(db(null), 'file'), where('visibilita', '==', 'pubblico'))));
+});

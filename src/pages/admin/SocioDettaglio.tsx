@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   aggiornaSocioAdmin,
   annoCorrente,
@@ -13,6 +13,7 @@ import {
   prossimoNumero,
 } from '../../lib/soci';
 import { pdfSocio } from '../../lib/esportaSoci';
+import { creaAccountSocio, inviaInvito, messaggioErroreAccount } from '../../lib/accountSoci';
 import { Icona } from '../../components/Icona';
 import { Allegati } from '../../components/File';
 import { ModuloSocio, SOCIO_VUOTO } from '../../components/ModuloSocio';
@@ -31,6 +32,7 @@ function Testata({ titolo, indietro }: { titolo: string; indietro: string }) {
 
 export function NuovoSocio() {
   const navigate = useNavigate();
+  const [conAccount, setConAccount] = useState(false);
   return (
     <>
       <Testata titolo="Inserisci un socio" indietro="/admin/soci" />
@@ -39,13 +41,17 @@ export function NuovoSocio() {
           Per chi non usa l'app o ha già compilato il modulo di carta: inserisci l'anagrafica, poi fai firmare sul telefono
           oppure scegli "Ha firmato su carta" e allega una foto del modulo. Email e cellulare sono facoltativi. Il socio risulta subito attivo.
         </p>
+        <label className="spunta pannello-spunta">
+          <input type="checkbox" checked={conAccount} onChange={(e) => setConAccount(e.target.checked)} />
+          Crea anche l'account per l'app e invia l'invito via email (serve l'email del socio)
+        </label>
         <ModuloSocio
           chi="admin"
           iniziale={SOCIO_VUOTO}
           etichettaInvio="Salva il socio"
           onInvia={async (dati, firma, moduli) => {
             const id = await creaSocioAdmin(dati, firma, moduli);
-            navigate(`/admin/soci/${id}`, { replace: true });
+            navigate(`/admin/soci/${id}${conAccount && dati.email.trim() ? '?account=1' : ''}`, { replace: true });
           }}
         />
       </main>
@@ -56,6 +62,7 @@ export function NuovoSocio() {
 export function SocioDettaglio() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
+  const [cerca, setCerca] = useSearchParams();
   const anno = annoCorrente();
   const [s, setS] = useState<Socio | null | undefined>(undefined);
   const [tutti, setTutti] = useState<Socio[]>([]);
@@ -169,6 +176,8 @@ export function SocioDettaglio() {
 
         <Riepilogo s={s} />
 
+        <AccountSocio s={s} automatico={cerca.get('account') === '1'} onCreato={(uid) => { setCerca({}); navigate(`/admin/soci/${uid}`, { replace: true }); }} />
+
         {s.firma && (
           <div className="pannello">
             <h2>Firma</h2>
@@ -212,5 +221,76 @@ export function SocioDettaglio() {
         )}
       </main>
     </>
+  );
+}
+
+/** Riquadro "Account per l'app": crea l'account e invia l'invito, oppure lo rimanda. */
+function AccountSocio({ s, automatico, onCreato }: { s: Socio; automatico: boolean; onCreato: (uid: string) => void }) {
+  const [lavoro, setLavoro] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [errore, setErrore] = useState('');
+  const avviato = useRef(false);
+  const email = s.email.trim();
+
+  const crea = async () => {
+    if (!email) return;
+    setLavoro(true);
+    setErrore('');
+    try {
+      const uid = await creaAccountSocio(s);
+      onCreato(uid);
+    } catch (e) {
+      setErrore(messaggioErroreAccount(e));
+      setLavoro(false);
+    }
+  };
+
+  useEffect(() => {
+    if (automatico && !avviato.current && !s.uid && email) {
+      avviato.current = true;
+      crea();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [automatico, s.uid, email]);
+
+  const rimanda = async () => {
+    setLavoro(true);
+    setErrore('');
+    setMsg('');
+    try {
+      await inviaInvito(email);
+      setMsg(`Email inviata a ${email}.`);
+    } catch (e) {
+      setErrore(messaggioErroreAccount(e));
+    } finally {
+      setLavoro(false);
+    }
+  };
+
+  return (
+    <div className="pannello">
+      <h2>Account per l'app</h2>
+      {s.uid ? (
+        <>
+          <p>
+            Ha un account con <strong>{email}</strong>
+            {s.accountCreatoIl ? `, creato da un organizzatore il ${s.accountCreatoIl.toDate().toLocaleDateString('it-IT')}` : ''}.
+            Entra nell'Area soci con questa email.
+          </p>
+          <p className="nota">Se non ha ancora scelto la password o l'ha dimenticata, rimandagli l'email: contiene il link per impostarla.</p>
+          <button type="button" className="bottone contorno piccolo" disabled={lavoro || !email} onClick={rimanda}>{lavoro ? 'Invio…' : 'Rimanda l\'email per la password'}</button>
+        </>
+      ) : email ? (
+        <>
+          <p>Non ha ancora un account: senza, non può entrare nell'Area soci (tessera, bacheca, documenti da firmare).</p>
+          <p className="nota">Creando l'account, a <strong>{email}</strong> arriva un'email con il link per scegliere la password. Se non la trova, deve guardare nello spam.</p>
+          <button type="button" className="bottone piccolo" disabled={lavoro} onClick={crea}>{lavoro ? 'Creo l\'account…' : 'Crea account e invia invito'}</button>
+        </>
+      ) : (
+        <p className="nota">Per creargli un account serve l'email: aggiungila con "Modifica dati".</p>
+      )}
+      {msg && <p className="avviso">{msg}</p>}
+      {errore && <p className="avviso errore">{errore}</p>}
+    </div>
   );
 }

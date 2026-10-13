@@ -70,6 +70,7 @@ export function Soci() {
         </div>
         <div className="riga-azioni">
           <Link to="/admin/soci/nuovo" className="bottone piccolo">+ Inserisci un socio</Link>
+          <Link to="/admin/soci/importa" className="bottone contorno piccolo">Importa da Excel</Link>
           <button type="button" className="bottone contorno piccolo" onClick={() => esporta('excel')} disabled={!tutti.length || !!esporto}>
             {esporto === 'excel' ? 'Preparo…' : 'Scarica Excel'}
           </button>

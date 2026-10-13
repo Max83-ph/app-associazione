@@ -17,7 +17,9 @@ Gira interamente sul **piano gratuito Firebase (Spark)**: niente Cloud Functions
 | Scansione all'ingresso | `/staff` | Staff e organizzatori |
 | Area soci: accesso, tessera, bacheca, i miei dati, documenti (informativa privacy PDF) | `/soci` | Soci |
 | Iscrizione soci (aperta, approvazione degli organizzatori) | `/soci/iscrizione` | Chi vuole diventare socio |
-| Gestione soci: approvazioni, tessere, Excel, PDF firmati, codice e QR di iscrizione | `/admin/soci` | Organizzatori |
+| Gestione soci: approvazioni, tessere, Excel, PDF firmati, modalità di iscrizione, codice e QR | `/admin/soci` | Organizzatori |
+| Inserimento manuale (firma sul telefono o su carta) e account per l'app con invito via email | `/admin/soci/nuovo` | Organizzatori |
+| Importazione soci da Excel (con modello scaricabile) | `/admin/soci/importa` | Organizzatori |
 | Bacheca soci: avvisi e news | `/admin/bacheca` | Organizzatori |
 | Documenti da firmare (testo e/o PDF), firme raccolte e PDF firmati | `/admin/documenti` | Organizzatori |
 | Informative, liberatorie e contatti | `/admin/testi` | Organizzatori |

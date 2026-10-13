@@ -121,6 +121,8 @@ export interface Socio extends DatiSocio {
   uid: string | null;
   firma: string | null;
   firmatoIl: Timestamp | null;
+  /** Quando un organizzatore ha creato l'account dell'app per questo socio. */
+  accountCreatoIl?: Timestamp;
   /** Foto o scansione del modulo firmato su carta (soci inseriti dagli organizzatori). */
   moduloCartaceo?: RifFile[];
   stato: StatoSocio;

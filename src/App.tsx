@@ -26,6 +26,7 @@ const GestioneDocumenti = lazy(() => import('./pages/admin/GestioneDocumenti').t
 const GestionePagine = lazy(() => import('./pages/admin/GestionePagine').then((m) => ({ default: m.GestionePagine })));
 const ModificaPagina = lazy(() => import('./pages/admin/GestionePagine').then((m) => ({ default: m.ModificaPagina })));
 const GestioneArchivio = lazy(() => import('./pages/admin/GestioneArchivio').then((m) => ({ default: m.GestioneArchivio })));
+const ImportaSoci = lazy(() => import('./pages/admin/ImportaSoci').then((m) => ({ default: m.ImportaSoci })));
 const Ingresso = lazy(() => import('./pages/staff/Ingresso').then((m) => ({ default: m.Ingresso })));
 function Protetta({ livello, children }: { livello: 'staff' | 'organizzatore'; children: ReactNode }) {
   const { caricamento, isStaff, isOrganizzatore } = useAuth();
@@ -57,6 +58,7 @@ export default function App() {
             <Route path="admin/eventi/:id/iscritti" element={<Protetta livello="organizzatore"><Iscritti /></Protetta>} />
             <Route path="admin/utenti" element={<Protetta livello="organizzatore"><Utenti /></Protetta>} />
             <Route path="admin/soci" element={<Protetta livello="organizzatore"><Soci /></Protetta>} />
+            <Route path="admin/soci/importa" element={<Protetta livello="organizzatore"><ImportaSoci /></Protetta>} />
             <Route path="admin/soci/nuovo" element={<Protetta livello="organizzatore"><NuovoSocio /></Protetta>} />
             <Route path="admin/soci/:id" element={<Protetta livello="organizzatore"><SocioDettaglio /></Protetta>} />
             <Route path="admin/bacheca" element={<Protetta livello="organizzatore"><GestioneBacheca /></Protetta>} />

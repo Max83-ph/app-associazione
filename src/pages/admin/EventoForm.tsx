@@ -143,7 +143,7 @@ export function EventoForm() {
     try {
       await salvaEvento(nuovo ? null : id!, dati);
       await eliminaFiles((originale?.galleria ?? []).filter((f) => !b.galleria.some((x) => x.id === f.id)).map((f) => f.id));
-      navigate('/admin');
+      navigate('/admin/eventi');
     } catch (err) {
       setErrore(err instanceof Error ? err.message : 'Salvataggio non riuscito.');
       setSalvo(false);
@@ -153,7 +153,7 @@ export function EventoForm() {
   return (
     <>
       <header className="intestazione compatta">
-        <Link to="/admin" className="indietro-chiaro" aria-label="Torna alla gestione"><Icona nome="indietro" size={22} spessore={2} /></Link>
+        <Link to="/admin/eventi" className="indietro-chiaro" aria-label="Torna agli eventi"><Icona nome="indietro" size={22} spessore={2} /></Link>
         <h1>{nuovo ? 'Nuovo evento' : 'Modifica evento'}</h1>
       </header>
       <main className="contenuto">

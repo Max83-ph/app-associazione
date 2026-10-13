@@ -46,7 +46,7 @@ export function Iscritti() {
   return (
     <>
       <header className="intestazione compatta">
-        <Link to="/admin" className="indietro-chiaro" aria-label="Torna alla gestione"><Icona nome="indietro" size={22} spessore={2} /></Link>
+        <Link to="/admin/eventi" className="indietro-chiaro" aria-label="Torna agli eventi"><Icona nome="indietro" size={22} spessore={2} /></Link>
         <div>
           <h1>Iscritti</h1>
           {ev && <div className="sottotitolo">{ev.titolo}, {dataBreve(ev.data)}</div>}

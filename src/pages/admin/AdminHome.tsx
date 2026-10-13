@@ -2,88 +2,124 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
+import { useAuth } from '../../lib/auth';
 import { ascoltaTuttiGliEventi } from '../../lib/dati';
-import { dataBreve, etichettaTipo } from '../../lib/format';
-import { qrLinkDataUrl } from '../../lib/biglietto';
-import { Icona } from '../../components/Icona';
-import type { Evento } from '../../types';
+import { ascoltaSoci } from '../../lib/soci';
+import { dataBreve } from '../../lib/format';
+import { NOME_ASSOCIAZIONE } from '../../config';
+import { Icona, type NomeIcona } from '../../components/Icona';
+import type { Evento, Socio } from '../../types';
 
+interface Voce {
+  a: string;
+  icona: NomeIcona;
+  titolo: string;
+  sotto: string;
+  badge?: string;
+}
+
+/** Pagina iniziale della Gestione: le funzioni divise per argomento. */
 export function AdminHome() {
+  const { utente } = useAuth();
   const [eventi, setEventi] = useState<Evento[] | null>(null);
-  const [errore, setErrore] = useState('');
-  const [mostraPassati, setMostraPassati] = useState(false);
+  const [soci, setSoci] = useState<Socio[] | null>(null);
+  useEffect(() => ascoltaTuttiGliEventi(setEventi, () => setEventi([])), []);
+  useEffect(() => ascoltaSoci(setSoci, () => setSoci([])), []);
 
-  useEffect(() => ascoltaTuttiGliEventi(setEventi, (e) => setErrore(e.message)), []);
+  // eslint-disable-next-line react-hooks/purity
+  const adesso = Date.now();
+  const prossimi = (eventi ?? []).filter((e) => e.data.toMillis() > adesso - 6 * 3600 * 1000).sort((a, b) => a.data.toMillis() - b.data.toMillis());
+  const prossimo = prossimi[0];
+  const daApprovare = (soci ?? []).filter((s) => s.stato === 'in_attesa').length;
+  const attivi = (soci ?? []).filter((s) => s.stato === 'attivo').length;
 
-  const soglia = Date.now() - 24 * 3600 * 1000;
-  const lista = (eventi ?? []).filter((e) => mostraPassati || e.data.toMillis() > soglia);
+  const gruppi: { titolo: string; voci: Voce[] }[] = [
+    {
+      titolo: 'Eventi',
+      voci: [
+        { a: '/admin/eventi', icona: 'calendario', titolo: 'Eventi e iscritti', sotto: eventi ? `${prossimi.length} in programma` : 'Elenco, modifica, iscritti' },
+        { a: '/admin/eventi/nuovo', icona: 'aggiungi', titolo: 'Nuovo evento', sotto: 'Pranzo, laboratorio, festa' },
+        { a: '/staff', icona: 'scansiona', titolo: 'Ingresso', sotto: 'Scansiona i biglietti' },
+      ],
+    },
+    {
+      titolo: 'Soci',
+      voci: [
+        { a: '/admin/soci', icona: 'utenti', titolo: 'Soci', sotto: soci ? `${attivi} attivi` : 'Elenco, tessere, iscrizioni', badge: daApprovare ? `${daApprovare} da approvare` : undefined },
+        { a: '/admin/soci/nuovo', icona: 'socioAggiungi', titolo: 'Nuovo socio', sotto: 'Inserisci a mano' },
+        { a: '/admin/soci/importa', icona: 'carica', titolo: 'Importa da Excel', sotto: 'Tanti soci in una volta' },
+      ],
+    },
+    {
+      titolo: 'Comunicazioni',
+      voci: [
+        { a: '/admin/bacheca', icona: 'megafono', titolo: 'Bacheca soci', sotto: 'Avvisi per i soci attivi' },
+        { a: '/admin/comunicazioni', icona: 'link', titolo: 'Comunicazioni con link', sotto: 'Avvisi per chi ha il link' },
+        { a: '/admin/documenti', icona: 'firma', titolo: 'Documenti da firmare', sotto: 'Firma in app dei soci' },
+      ],
+    },
+    {
+      titolo: 'Sito e contenuti',
+      voci: [
+        { a: '/admin/pagine', icona: 'pagina', titolo: 'Pagine', sotto: 'Home, Carnevale, Chi siamo…' },
+        { a: '/admin/archivio', icona: 'cartella', titolo: 'Archivio soci', sotto: 'Statuto, verbali, moduli' },
+        { a: '/admin/testi', icona: 'testo', titolo: 'Informative e contatti', sotto: 'Privacy, liberatorie, contatti' },
+      ],
+    },
+    {
+      titolo: 'Impostazioni',
+      voci: [{ a: '/admin/utenti', icona: 'modifica', titolo: 'Staff e organizzatori', sotto: 'Chi può gestire l\'app' }],
+    },
+  ];
 
   return (
     <>
       <header className="intestazione">
         <div className="intestazione-riga">
-          <span className="marchio">Gestione</span>
+          <span className="marchio"><span className="nastro" aria-hidden="true" />{NOME_ASSOCIAZIONE}</span>
           <button type="button" className="link-accesso" onClick={() => signOut(auth)}>Esci</button>
         </div>
-        <h1>Eventi</h1>
-        <div className="filtri">
-          <Link to="/admin/eventi/nuovo" className="filtro attivo">+ Nuovo evento</Link>
-          <Link to="/staff" className="filtro">Ingresso</Link>
-          <Link to="/admin/soci" className="filtro">Soci</Link>
-          <Link to="/admin/soci/nuovo" className="filtro">+ Nuovo socio</Link>
-          <Link to="/admin/bacheca" className="filtro">Bacheca</Link>
-          <Link to="/admin/comunicazioni" className="filtro">Comunicazioni con link</Link>
-          <Link to="/admin/pagine" className="filtro">Pagine</Link>
-          <Link to="/admin/archivio" className="filtro">Archivio</Link>
-          <Link to="/admin/documenti" className="filtro">Documenti da firmare</Link>
-          <Link to="/admin/testi" className="filtro">Informative e contatti</Link>
-          <Link to="/admin/utenti" className="filtro">Staff</Link>
-        </div>
+        <h1>Gestione</h1>
+        {utente?.email && <p className="nota">Accesso come {utente.email}</p>}
       </header>
       <main className="contenuto">
-        {errore && <p className="avviso errore">{errore}</p>}
-        {eventi === null && !errore && <p className="vuoto">Caricamento…</p>}
-        {eventi !== null && lista.length === 0 && <p className="vuoto">Nessun evento. Crea il primo con “Nuovo evento”.</p>}
-        <div className="lista-admin">
-          {lista.map((ev) => (
-            <div key={ev.id} className="riga-admin">
-              <div className="riga-admin-icona" style={{ background: ev.colore }}><Icona nome={ev.icona} size={22} /></div>
-              <div className="riga-admin-testo">
-                <div className="riga-admin-titolo">{ev.titolo}</div>
-                <div className="riga-admin-sotto">
-                  {dataBreve(ev.data)}</div>
-                <div className="riga-admin-sotto">{etichettaTipo[ev.tipo]}, <span className={`stato stato-${ev.stato}`}>{{ bozza: 'bozza', aperto: 'iscrizioni aperte', chiuso: 'iscrizioni chiuse' }[ev.stato]}</span>
-                </div>
-                <div className="riga-admin-sotto">
-                  {ev.postiOccupati}/{ev.postiMax} posti{ev.tipo === 'pasto' && ev.asportoAttivo ? `, ${ev.porzioniPrenotate} asporto` : ''}
-                </div>
-              </div>
-              <div className="riga-admin-azioni">
-                <Link to={`/admin/eventi/${ev.id}/iscritti`} className="mini">Iscritti</Link>
-                <Link to={`/admin/eventi/${ev.id}`} className="mini">Modifica</Link>
-              </div>
+        {(prossimo || daApprovare > 0) && (
+          <div className="cruscotto">
+            {prossimo && (
+              <Link to={`/admin/eventi/${prossimo.id}/iscritti`} className="cruscotto-voce">
+                <span className="cruscotto-etichetta">Prossimo evento</span>
+                <strong>{prossimo.titolo}</strong>
+                <span>{dataBreve(prossimo.data)} · {prossimo.postiOccupati}/{prossimo.postiMax} posti</span>
+              </Link>
+            )}
+            {daApprovare > 0 && (
+              <Link to="/admin/soci" className="cruscotto-voce attenzione">
+                <span className="cruscotto-etichetta">Da fare</span>
+                <strong>{daApprovare} {daApprovare === 1 ? 'richiesta' : 'richieste'} di iscrizione</strong>
+                <span>Da approvare o respingere</span>
+              </Link>
+            )}
+          </div>
+        )}
+        {gruppi.map((g) => (
+          <section key={g.titolo} className="gruppo-gestione">
+            <h2 className="titolo-sezione">{g.titolo}</h2>
+            <div className="griglia-gestione">
+              {g.voci.map((v) => (
+                <Link key={v.a} to={v.a} className="voce-gestione">
+                  <span className="voce-icona"><Icona nome={v.icona} size={22} /></span>
+                  <span className="voce-testo">
+                    <span className="voce-titolo">{v.titolo}</span>
+                    <span className="voce-sotto">{v.sotto}</span>
+                    {v.badge && <span className="etichetta etichetta-caldo voce-badge">{v.badge}</span>}
+                  </span>
+                  <span className="voce-freccia"><Icona nome="freccia" size={18} /></span>
+                </Link>
+              ))}
             </div>
-          ))}
-        </div>
-        <label className="spunta"><input type="checkbox" checked={mostraPassati} onChange={(e) => setMostraPassati(e.target.checked)} /> Mostra anche gli eventi passati</label>
-        <QrHome />
+          </section>
+        ))}
       </main>
     </>
-  );
-}
-
-function QrHome() {
-  const [qr, setQr] = useState('');
-  const url = window.location.origin + '/';
-  useEffect(() => {
-    qrLinkDataUrl(url).then(setQr);
-  }, [url]);
-  return (
-    <section className="pannello qr-home">
-      <h2>QR della Home</h2>
-      <p className="nota">Da stampare su volantini e in sede: apre l'elenco degli eventi. Punta a <code>{url}</code>.</p>
-      {qr && <img src={qr} width={160} height={160} alt="QR della Home" />}
-      {qr && <a className="bottone contorno" href={qr} download="qr-home.png">Scarica PNG</a>}
-    </section>
   );
 }

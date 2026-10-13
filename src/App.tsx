@@ -13,6 +13,7 @@ import { PaginaComunicazioniPubblica } from './pages/Comunicazioni';
 // Le pagine pesanti (QR, PDF, fotocamera, gestione) si caricano solo quando servono.
 const Biglietto = lazy(() => import('./pages/Biglietto').then((m) => ({ default: m.Biglietto })));
 const AdminHome = lazy(() => import('./pages/admin/AdminHome').then((m) => ({ default: m.AdminHome })));
+const AdminEventi = lazy(() => import('./pages/admin/AdminEventi').then((m) => ({ default: m.AdminEventi })));
 const EventoForm = lazy(() => import('./pages/admin/EventoForm').then((m) => ({ default: m.EventoForm })));
 const Iscritti = lazy(() => import('./pages/admin/Iscritti').then((m) => ({ default: m.Iscritti })));
 const Utenti = lazy(() => import('./pages/admin/Utenti').then((m) => ({ default: m.Utenti })));
@@ -58,6 +59,7 @@ export default function App() {
             <Route path="contatti" element={<Navigate to="/info" replace />} />
             <Route path="accesso" element={<Accesso />} />
             <Route path="admin" element={<Protetta livello="organizzatore"><AdminHome /></Protetta>} />
+            <Route path="admin/eventi" element={<Protetta livello="organizzatore"><AdminEventi /></Protetta>} />
             <Route path="admin/eventi/:id" element={<Protetta livello="organizzatore"><EventoForm /></Protetta>} />
             <Route path="admin/eventi/:id/iscritti" element={<Protetta livello="organizzatore"><Iscritti /></Protetta>} />
             <Route path="admin/utenti" element={<Protetta livello="organizzatore"><Utenti /></Protetta>} />

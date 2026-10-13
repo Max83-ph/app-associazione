@@ -30,6 +30,7 @@ export function AdminHome() {
           <Link to="/admin/eventi/nuovo" className="filtro attivo">+ Nuovo evento</Link>
           <Link to="/staff" className="filtro">Ingresso</Link>
           <Link to="/admin/soci" className="filtro">Soci</Link>
+          <Link to="/admin/soci/nuovo" className="filtro">+ Nuovo socio</Link>
           <Link to="/admin/bacheca" className="filtro">Bacheca</Link>
           <Link to="/admin/pagine" className="filtro">Pagine</Link>
           <Link to="/admin/archivio" className="filtro">Archivio</Link>

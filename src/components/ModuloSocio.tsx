@@ -4,6 +4,8 @@ import { erroreCF, normalizzaCF } from '../lib/codiceFiscale';
 import { NOME_COMITATO } from '../config';
 import { useTesti } from '../lib/testi';
 import { Testo } from './TestoRicco';
+import { ModificaAllegati } from './File';
+import type { RifFile } from '../lib/file';
 import type { DatiSocio } from '../types';
 
 export const SOCIO_VUOTO: DatiSocio = {
@@ -28,8 +30,8 @@ function maggiorenne(data: string): boolean {
   return diciotto <= oggi;
 }
 
-/** Elenco di ciò che manca o non torna, in parole semplici. */
-export function problemiSocio(d: DatiSocio): string[] {
+/** Elenco di ciò che manca o non torna, in parole semplici. Per l'admin email e cellulare sono facoltativi. */
+export function problemiSocio(d: DatiSocio, contattiFacoltativi = false): string[] {
   const p: string[] = [];
   if (!d.nome.trim() || !d.cognome.trim()) p.push('nome e cognome');
   if (!d.dataNascita) p.push('la data di nascita');
@@ -40,8 +42,9 @@ export function problemiSocio(d: DatiSocio): string[] {
   if (!d.residenza.indirizzo.trim() || !d.residenza.comune.trim()) p.push('indirizzo e comune di residenza');
   if (!/^\d{5}$/.test(d.residenza.cap.trim())) p.push('un CAP di 5 cifre');
   if (!/^[A-Za-z]{2}$/.test(d.residenza.provincia.trim())) p.push('la sigla della provincia (es. VC)');
-  if (!EMAIL.test(d.email.trim())) p.push('un\'email valida');
-  if (!/^\+?\d{6,15}$/.test(d.cellulare.replace(/[^\d+]/g, ''))) p.push('un numero di cellulare');
+  if (!(contattiFacoltativi && !d.email.trim()) && !EMAIL.test(d.email.trim())) p.push('un\'email valida');
+  const cell = d.cellulare.replace(/[^\d+]/g, '');
+  if (!(contattiFacoltativi && !cell) && !/^\+?\d{6,15}$/.test(cell)) p.push('un numero di cellulare');
   return p;
 }
 
@@ -52,15 +55,20 @@ interface Props {
   /** Firma già presente (modifica di un socio esistente): la nuova firma diventa facoltativa. */
   firmaEsistente?: string | null;
   etichettaInvio: string;
-  onInvia: (dati: DatiSocio, firma: string | null) => Promise<void>;
+  /** Moduli cartacei già allegati (solo admin). */
+  moduliEsistenti?: RifFile[];
+  onInvia: (dati: DatiSocio, firma: string | null, moduli: RifFile[]) => Promise<void>;
 }
 
-export function ModuloSocio({ iniziale, chi, firmaEsistente, etichettaInvio, onInvia }: Props) {
+export function ModuloSocio({ iniziale, chi, firmaEsistente, moduliEsistenti = [], etichettaInvio, onInvia }: Props) {
   const testi = useTesti();
   const [d, setD] = useState<DatiSocio>(iniziale);
   const [sceltaFoto, setSceltaFoto] = useState<boolean | null>(firmaEsistente ? iniziale.consensi.liberatoriaFoto : null);
   const [firma, setFirma] = useState<string | null>(null);
   const [rifirma, setRifirma] = useState(!firmaEsistente);
+  // Admin: firma sul telefono oppure modulo firmato su carta (con scansione facoltativa).
+  const [suCarta, setSuCarta] = useState(chi === 'admin' && !firmaEsistente && moduliEsistenti.length > 0);
+  const [moduli, setModuli] = useState<RifFile[]>(moduliEsistenti);
   const [invio, setInvio] = useState(false);
   const [errore, setErrore] = useState('');
 
@@ -69,10 +77,10 @@ export function ModuloSocio({ iniziale, chi, firmaEsistente, etichettaInvio, onI
   const setCons = (k: keyof DatiSocio['consensi'], v: boolean) => setD((x) => ({ ...x, consensi: { ...x.consensi, [k]: v } }));
 
   const tu = chi === 'socio';
-  const problemi = problemiSocio(d);
+  const problemi = problemiSocio(d, !tu);
   if (!d.consensi.privacy) problemi.push('la presa visione dell\'informativa');
   if (sceltaFoto === null) problemi.push('la scelta sulla liberatoria foto e video');
-  if (rifirma && !firma) problemi.push('la firma');
+  if (rifirma && !suCarta && !firma) problemi.push('la firma');
 
   const invia = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +88,7 @@ export function ModuloSocio({ iniziale, chi, firmaEsistente, etichettaInvio, onI
     setInvio(true);
     setErrore('');
     try {
-      await onInvia({ ...d, consensi: { ...d.consensi, liberatoriaFoto: !!sceltaFoto } }, rifirma ? firma : null);
+      await onInvia({ ...d, consensi: { ...d.consensi, liberatoriaFoto: !!sceltaFoto } }, rifirma && !suCarta ? firma : null, moduli);
     } catch (err) {
       const codice = (err as { code?: string }).code;
       setErrore(
@@ -129,8 +137,8 @@ export function ModuloSocio({ iniziale, chi, firmaEsistente, etichettaInvio, onI
 
       <fieldset>
         <legend>Contatti</legend>
-        <label>Email<input type="email" inputMode="email" value={d.email} onChange={(e) => set('email', e.target.value)} autoComplete={tu ? 'email' : 'off'} /></label>
-        <label>Cellulare<input type="tel" inputMode="tel" value={d.cellulare} onChange={(e) => set('cellulare', e.target.value)} autoComplete={tu ? 'tel' : 'off'} placeholder="es. 333 1234567" /></label>
+        <label>Email{!tu && ' (facoltativa)'}<input type="email" inputMode="email" value={d.email} onChange={(e) => set('email', e.target.value)} autoComplete={tu ? 'email' : 'off'} /></label>
+        <label>Cellulare{!tu && ' (facoltativo)'}<input type="tel" inputMode="tel" value={d.cellulare} onChange={(e) => set('cellulare', e.target.value)} autoComplete={tu ? 'tel' : 'off'} placeholder="es. 333 1234567" /></label>
         <label className="spunta">
           <input type="checkbox" checked={d.consensi.whatsapp} onChange={(e) => setCons('whatsapp', e.target.checked)} />
           {tu ? 'Voglio entrare' : 'Vuole entrare'} nel gruppo WhatsApp dei soci
@@ -172,8 +180,24 @@ export function ModuloSocio({ iniziale, chi, firmaEsistente, etichettaInvio, onI
           </div>
         ) : (
           <div>
-            <div className="etichetta-campo">{tu ? 'Firma con il dito' : 'Firma del socio (fagli firmare sul tuo telefono)'}</div>
-            <Firma onChange={setFirma} />
+            {!tu && (
+              <div className="griglia-2 scelta-firma">
+                <button type="button" className={!suCarta ? 'scelta attiva' : 'scelta'} aria-pressed={!suCarta} onClick={() => setSuCarta(false)}>Firma qui sul telefono</button>
+                <button type="button" className={suCarta ? 'scelta attiva' : 'scelta'} aria-pressed={suCarta} onClick={() => setSuCarta(true)}>Ha firmato su carta</button>
+              </div>
+            )}
+            {!suCarta && (
+              <>
+                <div className="etichetta-campo">{tu ? 'Firma con il dito' : 'Firma del socio (fagli firmare sul tuo telefono)'}</div>
+                <Firma onChange={setFirma} />
+              </>
+            )}
+          </div>
+        )}
+        {!tu && (suCarta || moduli.length > 0) && (
+          <div>
+            <div className="etichetta-campo">Modulo cartaceo firmato (foto o PDF, facoltativo)</div>
+            <ModificaAllegati valore={moduli} onChange={setModuli} visibilita="soci" etichetta="+ Allega foto o scansione del modulo" max={4} salvati={moduliEsistenti} />
           </div>
         )}
       </fieldset>

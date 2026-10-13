@@ -93,12 +93,13 @@ export function ascoltaSocio(id: string, cb: (s: Socio | null) => void, err: (e:
 }
 
 /** Socio inserito dall'admin (per chi non usa l'app): attivo da subito, senza account. */
-export async function creaSocioAdmin(dati: DatiSocio, firma: string): Promise<string> {
+export async function creaSocioAdmin(dati: DatiSocio, firma: string | null, moduloCartaceo: RifFile[] = []): Promise<string> {
   const ref = await addDoc(soci, {
     ...pulisci(dati),
     uid: null,
     firma,
-    firmatoIl: serverTimestamp(),
+    firmatoIl: firma ? serverTimestamp() : null,
+    moduloCartaceo,
     stato: 'attivo',
     tessere: {},
     note: '',
@@ -109,9 +110,11 @@ export async function creaSocioAdmin(dati: DatiSocio, firma: string): Promise<st
   return ref.id;
 }
 
-export async function aggiornaSocioAdmin(id: string, dati: DatiSocio, nuovaFirma: string | null) {
+export async function aggiornaSocioAdmin(id: string, dati: DatiSocio, nuovaFirma: string | null, moduloCartaceo?: RifFile[], moduliPrima: RifFile[] = []) {
   const extra: Record<string, unknown> = nuovaFirma ? { firma: nuovaFirma, firmatoIl: serverTimestamp() } : {};
+  if (moduloCartaceo) extra.moduloCartaceo = moduloCartaceo;
   await updateDoc(doc(soci, id), { ...pulisci(dati), ...extra, updatedAt: serverTimestamp() });
+  if (moduloCartaceo) await eliminaFiles(moduliPrima.filter((f) => !moduloCartaceo.some((x) => x.id === f.id)).map((f) => f.id));
 }
 
 export async function impostaStato(id: string, stato: StatoSocio) {

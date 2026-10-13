@@ -88,6 +88,9 @@ test('iscrizione soci: aperte, solo con codice, chiuse', async () => {
   await impostaModo('chiuse');
   await assertFails(setDoc(doc(db('n4'), 'soci/n4'), richiesta('n4', { codiceIscrizione: 'CAPPU2026' })));
   await assertSucceeds(setDoc(doc(db('org'), 'soci/manuale'), richiesta('manuale', { creatoDa: 'admin' })));
+  // Socio inserito a mano, firmato su carta, senza email né cellulare.
+  await assertSucceeds(setDoc(doc(db('org'), 'soci/carta'), richiesta(null, { creatoDa: 'admin', stato: 'attivo', firma: null, firmatoIl: null, email: '', cellulare: '', moduloCartaceo: [] })));
+  await assertFails(setDoc(doc(db('mario'), 'soci/carta2'), richiesta(null, { creatoDa: 'admin', stato: 'attivo', firma: null })));
 
   await impostaModo('aperte');
   await assertSucceeds(setDoc(doc(db('n5'), 'soci/n5'), richiesta('n5')));

@@ -71,7 +71,9 @@ function paginaSocio(pdf: JsPDF, s: Socio) {
   scrivi(`Gruppo WhatsApp dei soci: ${siNo(s.consensi.whatsapp)}   Mailing list del ${NOME_COMITATO}: ${siNo(s.consensi.mailingList)}`, 10, 'normal', 6);
 
   const quando = s.firmatoIl ? s.firmatoIl.toDate().toLocaleString('it-IT') : '';
-  scrivi(`Firmato ${quando ? `il ${quando}` : ''}${s.creatoDa === 'admin' ? ', alla presenza di un organizzatore' : ', dall\'app'}`, 9.5);
+  if (s.firma) scrivi(`Firmato ${quando ? `il ${quando}` : ''}${s.creatoDa === 'admin' ? ', alla presenza di un organizzatore' : ', dall\'app'}`, 9.5);
+  else if (s.moduloCartaceo?.length) scrivi(`Modulo firmato su carta, conservato dall'associazione (allegati nell'app: ${s.moduloCartaceo.map((f) => f.nome).join(', ')}).`, 9.5);
+  else scrivi('Firma non ancora raccolta.', 9.5, 'bold');
   if (s.firma) {
     if (y + 35 > h - 10) {
       pdf.addPage();

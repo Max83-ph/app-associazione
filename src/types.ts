@@ -121,6 +121,8 @@ export interface Socio extends DatiSocio {
   uid: string | null;
   firma: string | null;
   firmatoIl: Timestamp | null;
+  /** Foto o scansione del modulo firmato su carta (soci inseriti dagli organizzatori). */
+  moduloCartaceo?: RifFile[];
   stato: StatoSocio;
   /** Chiave: anno ("2026"). */
   tessere: Record<string, Tessera>;

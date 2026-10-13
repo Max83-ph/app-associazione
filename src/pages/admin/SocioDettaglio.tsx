@@ -14,6 +14,7 @@ import {
 } from '../../lib/soci';
 import { pdfSocio } from '../../lib/esportaSoci';
 import { Icona } from '../../components/Icona';
+import { Allegati } from '../../components/File';
 import { ModuloSocio, SOCIO_VUOTO } from '../../components/ModuloSocio';
 import { Riepilogo } from '../soci/AreaSoci';
 import { ETICHETTE_STATO } from './Soci';
@@ -34,13 +35,16 @@ export function NuovoSocio() {
     <>
       <Testata titolo="Inserisci un socio" indietro="/admin/soci" />
       <main className="contenuto">
-        <p className="nota">Per chi non usa l'app: compila i dati insieme alla persona, poi passale il telefono per la firma. Il socio risulta subito attivo.</p>
+        <p className="nota">
+          Per chi non usa l'app o ha già compilato il modulo di carta: inserisci l'anagrafica, poi fai firmare sul telefono
+          oppure scegli "Ha firmato su carta" e allega una foto del modulo. Email e cellulare sono facoltativi. Il socio risulta subito attivo.
+        </p>
         <ModuloSocio
           chi="admin"
           iniziale={SOCIO_VUOTO}
-          etichettaInvio="Firma e salva il socio"
-          onInvia={async (dati, firma) => {
-            const id = await creaSocioAdmin(dati, firma!);
+          etichettaInvio="Salva il socio"
+          onInvia={async (dati, firma, moduli) => {
+            const id = await creaSocioAdmin(dati, firma, moduli);
             navigate(`/admin/soci/${id}`, { replace: true });
           }}
         />
@@ -89,9 +93,10 @@ export function SocioDettaglio() {
             chi="admin"
             iniziale={iniziale}
             firmaEsistente={s.firma}
+            moduliEsistenti={s.moduloCartaceo ?? []}
             etichettaInvio="Salva le modifiche"
-            onInvia={async (dati, firma) => {
-              await aggiornaSocioAdmin(s.id, dati, firma);
+            onInvia={async (dati, firma, moduli) => {
+              await aggiornaSocioAdmin(s.id, dati, firma, moduli, s.moduloCartaceo ?? []);
               setModifica(false);
             }}
           />
@@ -170,6 +175,15 @@ export function SocioDettaglio() {
             <img className="firma-img" src={s.firma} alt={`Firma di ${s.nome} ${s.cognome}`} />
             {s.firmatoIl && <p className="nota">Firmato il {s.firmatoIl.toDate().toLocaleString('it-IT')}.</p>}
           </div>
+        )}
+        {(s.moduloCartaceo?.length ?? 0) > 0 && (
+          <div className="pannello">
+            <h2>Modulo firmato su carta</h2>
+            <Allegati lista={s.moduloCartaceo} />
+          </div>
+        )}
+        {!s.firma && !s.moduloCartaceo?.length && (
+          <p className="avviso">Manca la firma: con "Modifica dati" puoi farlo firmare sul telefono o allegare il modulo di carta.</p>
         )}
 
         <div className="pannello">

@@ -1,8 +1,8 @@
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
-import type { Prenotazione } from '../types';
+import type { Evento, Prenotazione } from '../types';
 import { codiceLeggibile } from './codice';
-import { dataBreve } from './format';
+import { avvisoArrivo, dataBreve, dove } from './format';
 import { NOME_ASSOCIAZIONE } from '../config';
 import { testiCorrenti, testoSemplice } from './testi';
 
@@ -20,7 +20,7 @@ export function descriviModalita(p: Prenotazione): string {
   return `${p.quantita} ${p.quantita === 1 ? 'persona' : 'persone'}`;
 }
 
-export async function scaricaPdfBiglietto(p: Prenotazione) {
+export async function scaricaPdfBiglietto(p: Prenotazione, ev?: Evento | null) {
   const pdf = new jsPDF({ unit: 'mm', format: 'a5' });
   const w = pdf.internal.pageSize.getWidth();
   pdf.setFillColor(18, 32, 26);
@@ -35,9 +35,17 @@ export async function scaricaPdfBiglietto(p: Prenotazione) {
   pdf.text(pdf.splitTextToSize(p.eventoTitolo, w - 20), w / 2, 34, { align: 'center' });
   pdf.setFontSize(11);
   pdf.setTextColor(178, 58, 30);
-  pdf.text(dataBreve(p.eventoData), w / 2, 48, { align: 'center' });
+  pdf.text(dataBreve(p.eventoData), w / 2, 46, { align: 'center' });
+  const luogo = ev ? dove(ev, testiCorrenti().contatti.indirizzo).testo : '';
+  if (luogo) {
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(10);
+    pdf.setTextColor(26, 31, 43);
+    pdf.text(pdf.splitTextToSize(luogo, w - 24), w / 2, 52, { align: 'center' });
+    pdf.setFont('helvetica', 'bold');
+  }
 
-  pdf.addImage(await qrDataUrl(p.id, 600), 'PNG', w / 2 - 35, 54, 70, 70);
+  pdf.addImage(await qrDataUrl(p.id, 600), 'PNG', w / 2 - 33, 58, 66, 66);
   pdf.setTextColor(26, 31, 43);
   pdf.setFontSize(14);
   pdf.text(codiceLeggibile(p.id), w / 2, 132, { align: 'center' });
@@ -51,6 +59,16 @@ export async function scaricaPdfBiglietto(p: Prenotazione) {
     `Pagamento: ${p.pagamento.stato === 'da_pagare' ? 'in loco' : 'effettuato'}`,
   ];
   pdf.text(righe, 14, 146);
+  const arrivo = ev ? avvisoArrivo(ev) : '';
+  if (arrivo) {
+    pdf.setFillColor(252, 241, 204);
+    pdf.roundedRect(10, 178, w - 20, 12, 2, 2, 'F');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(106, 80, 0);
+    pdf.text(pdf.splitTextToSize(arrivo, w - 28), w / 2, 185, { align: 'center' });
+  }
+  pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(8.5);
   pdf.setTextColor(90, 98, 115);
   pdf.text('Mostra questo QR all\'ingresso, stampato o dal telefono.', w / 2, 200, { align: 'center' });

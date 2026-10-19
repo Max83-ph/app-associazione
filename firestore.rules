@@ -246,6 +246,10 @@ service cloud.firestore {
       allow write: if isOrg() && id == 'iscrizione'
         && request.resource.data.keys().hasOnly(['modo', 'aggiornatoIl'])
         && request.resource.data.modo in ['aperte', 'codice', 'chiuse'];
+      allow write: if isOrg() && id == 'email'
+        && request.resource.data.keys().hasOnly(['url', 'aggiornatoIl'])
+        && request.resource.data.url is string
+        && (request.resource.data.url == '' || request.resource.data.url.matches('^https://script[.]google[.]com/macros/s/[A-Za-z0-9_-]+/exec$'));
       allow write: if isOrg() && id == 'testi'
         && request.resource.data.keys().hasOnly(['chiSiamo', 'informativaPrivacy', 'liberatoriaFoto',
              'informativaSoci', 'liberatoriaSoci', 'contatti', 'aggiornatoDa', 'aggiornatoIl'])

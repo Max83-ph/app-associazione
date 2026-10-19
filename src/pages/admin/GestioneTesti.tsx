@@ -4,6 +4,7 @@ import { useAuth } from '../../lib/auth';
 import { salvaTesti, TESTI_PREDEFINITI, useTesti, type Contatti, type Testi } from '../../lib/testi';
 import { Icona } from '../../components/Icona';
 import { EditorTesto } from '../../components/TestoRicco';
+import { EmailBiglietti } from './EmailBiglietti';
 
 type CampoTesto = Exclude<keyof Testi, 'contatti'>;
 
@@ -92,6 +93,7 @@ export function GestioneTesti() {
           {esito && <p className="avviso">{esito}</p>}
           <button type="submit" className="bottone" disabled={salvo || !toccato}>{salvo ? 'Salvo…' : 'Salva i testi'}</button>
         </form>
+        <EmailBiglietti />
       </main>
     </>
   );

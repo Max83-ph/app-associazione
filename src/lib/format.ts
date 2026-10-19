@@ -78,3 +78,20 @@ export function iscrizioniAperte(ev: Evento, adesso = new Date()): boolean {
     (ev.chiusuraIscrizioni === null || ev.chiusuraIscrizioni.toDate() > adesso)
   );
 }
+
+export const ANTICIPO_PREDEFINITO = 15;
+
+/** "Presentati almeno 15 minuti prima dell'inizio, entro le 12:15." (vuoto se l'evento non lo chiede) */
+export function avvisoArrivo(ev: { data: Timestamp; anticipoMinuti?: number }): string {
+  const m = ev.anticipoMinuti ?? ANTICIPO_PREDEFINITO;
+  if (!m) return '';
+  const d = new Date(ev.data.toMillis() - m * 60_000);
+  return `Presentati almeno ${m} minuti prima dell'inizio, entro le ${due(d.getHours())}:${due(d.getMinutes())}.`;
+}
+
+/** Indirizzo da mostrare e link per aprirlo nelle mappe. */
+export function dove(ev: { luogo: string; indirizzo?: string }, indirizzoSede: string): { testo: string; mappa: string | null } {
+  const ind = (ev.indirizzo ?? '').trim() || (indirizzoSede.startsWith('[') ? '' : indirizzoSede.trim());
+  const testo = [ev.luogo.trim(), ind].filter(Boolean).join(', ');
+  return { testo, mappa: ind ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ind)}` : null };
+}

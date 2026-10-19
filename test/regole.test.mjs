@@ -156,3 +156,11 @@ test('comunicazioni con codice: si leggono solo conoscendo il codice', async () 
   await assertFails(getDocs(query(collection(db(null), 'file'), where('visibilita', '==', 'link'))));
   await assertSucceeds(getDocs(query(collection(db(null), 'file'), where('visibilita', '==', 'pubblico'))));
 });
+
+test('configurazione email: solo organizzatori e solo URL di Apps Script', async () => {
+  await assertSucceeds(getDoc(doc(db(null), 'contenuti/email')));
+  await assertFails(setDoc(doc(db('mario'), 'contenuti/email'), { url: 'https://script.google.com/macros/s/abc/exec' }));
+  await assertFails(setDoc(doc(db('org'), 'contenuti/email'), { url: 'https://cattivo.example.com/exec' }));
+  await assertSucceeds(setDoc(doc(db('org'), 'contenuti/email'), { url: 'https://script.google.com/macros/s/AKfy_cb-123/exec' }));
+  await assertSucceeds(setDoc(doc(db('org'), 'contenuti/email'), { url: '' }));
+});

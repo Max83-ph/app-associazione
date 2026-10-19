@@ -15,6 +15,10 @@ export interface Evento {
   titolo: string;
   descrizione: string;
   luogo: string;
+  /** Indirizzo per il navigatore; se vuoto si usa quello della sede (Informative e contatti). */
+  indirizzo?: string;
+  /** Minuti di anticipo con cui presentarsi (0 = nessun avviso). Se manca vale 15. */
+  anticipoMinuti?: number;
   data: Timestamp;
   /** Mezzanotte del giorno dell'evento: da qui vale il limite porzioni asporto. */
   inizioGiorno: Timestamp;

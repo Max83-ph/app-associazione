@@ -559,3 +559,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--verde); outline:
 .voce-badge { margin-top: 4px; }
 .voce-freccia { flex: none; color: #b5bdb3; transition: transform .15s, color .15s; }
 .intestazione.compatta .intestazione-azione { margin-left: auto; }
+.info-evento { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 14px; background: var(--bianco); border: 1px solid var(--linea); }
+.info-evento p { margin: 0; }
+.info-evento a { color: var(--verde); }
+.biglietto-luogo { font-size: 14px; text-align: center; }
+.biglietto-luogo a { color: inherit; text-decoration: underline; }
+.avviso-arrivo { margin: 4px 0 0; padding: 8px 12px; border-radius: 10px; background: var(--giallo-tenue); color: var(--giallo-testo); font-weight: 600; font-size: 14px; text-align: center; }
+.nota-email { margin: 8px auto 0; max-width: 34ch; padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,.14); font-size: 14px; line-height: 1.4; }
+.passi { margin: 8px 0 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }

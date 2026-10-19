@@ -4,6 +4,7 @@ import { Timestamp } from 'firebase/firestore';
 import { ascoltaEvento, salvaEvento, type DatiEvento } from '../../lib/dati';
 import { perInputDataOra } from '../../lib/format';
 import { Icona } from '../../components/Icona';
+import { useTesti } from '../../lib/testi';
 import { ModificaAllegati } from '../../components/File';
 import { EditorTesto } from '../../components/TestoRicco';
 import { eliminaFiles, type RifFile } from '../../lib/file';
@@ -17,6 +18,8 @@ interface Bozza {
   titolo: string;
   descrizione: string;
   luogo: string;
+  indirizzo: string;
+  anticipoMinuti: number;
   data: string;
   chiusura: string;
   tipo: TipoEvento;
@@ -38,6 +41,8 @@ const vuota: Bozza = {
   titolo: '',
   descrizione: '',
   luogo: 'Sede',
+  indirizzo: '',
+  anticipoMinuti: 15,
   data: '',
   chiusura: '',
   tipo: 'pasto',
@@ -60,6 +65,8 @@ function daEvento(ev: Evento): Bozza {
     titolo: ev.titolo,
     descrizione: ev.descrizione,
     luogo: ev.luogo,
+    indirizzo: ev.indirizzo ?? '',
+    anticipoMinuti: ev.anticipoMinuti ?? 15,
     data: perInputDataOra(ev.data.toDate()),
     chiusura: ev.chiusuraIscrizioni ? perInputDataOra(ev.chiusuraIscrizioni.toDate()) : '',
     tipo: ev.tipo,
@@ -79,6 +86,7 @@ function daEvento(ev: Evento): Bozza {
 }
 
 export function EventoForm() {
+  const testi = useTesti();
   const { id } = useParams();
   const nuovo = !id || id === 'nuovo';
   const navigate = useNavigate();
@@ -123,6 +131,8 @@ export function EventoForm() {
       titolo: b.titolo.trim(),
       descrizione: b.descrizione.trim(),
       luogo: b.luogo.trim(),
+      indirizzo: b.indirizzo.trim(),
+      anticipoMinuti: Math.max(0, Math.min(180, Math.round(b.anticipoMinuti || 0))),
       data: Timestamp.fromDate(data),
       inizioGiorno: Timestamp.fromDate(inizioGiorno),
       chiusuraIscrizioni: b.chiusura ? Timestamp.fromDate(new Date(b.chiusura)) : null,
@@ -185,7 +195,15 @@ export function EventoForm() {
             <div className="etichetta-campo">Descrizione</div>
             <EditorTesto etichetta="Descrizione dell'evento" valore={b.descrizione} onChange={(v) => setB((x) => (x ? { ...x, descrizione: v } : x))} righe={6} max={6000} />
             <label>Data e ora<input type="datetime-local" value={b.data} onChange={(e) => set('data', e.target.value)} required /></label>
-            <label>Luogo<input value={b.luogo} onChange={(e) => set('luogo', e.target.value)} maxLength={80} /></label>
+            <label>Luogo<input value={b.luogo} onChange={(e) => set('luogo', e.target.value)} maxLength={80} placeholder="es. Sede, Salone parrocchiale" /></label>
+            <label>Indirizzo
+              <input value={b.indirizzo} onChange={(e) => set('indirizzo', e.target.value)} maxLength={160} placeholder={testi.contatti.indirizzo || 'Via, numero, città'} />
+              <span className="nota">Va sul biglietto e apre il navigatore. Se lo lasci vuoto si usa l'indirizzo della sede ({testi.contatti.indirizzo || 'da impostare in Informative e contatti'}).</span>
+            </label>
+            <label>Presentarsi prima dell'inizio (minuti)
+              <input type="number" min={0} max={180} step={5} value={b.anticipoMinuti} onChange={(e) => set('anticipoMinuti', Number(e.target.value))} />
+              <span className="nota">Compare sulla pagina dell'evento e sul biglietto. 0 = nessun avviso.</span>
+            </label>
             <label>Prezzo (facoltativo)<input value={b.prezzo} onChange={(e) => set('prezzo', e.target.value)} placeholder="es. 15 € adulti, 8 € bambini" maxLength={60} /></label>
             <label>Chiusura iscrizioni (facoltativa)<input type="datetime-local" value={b.chiusura} onChange={(e) => set('chiusura', e.target.value)} />
               <span className="nota">Se vuota, le iscrizioni restano aperte fino all'inizio dell'evento.</span>

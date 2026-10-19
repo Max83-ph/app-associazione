@@ -78,6 +78,10 @@ Si aggiungono, senza riscrivere l'app:
 - Cloud Functions per l'email automatica del biglietto e il controllo posti lato server.
 - Storage per locandine e PDF firmati (ora salvati leggeri nel database).
 
+## Biglietti via email
+
+Sul piano gratuito l'app non può spedire email da sola: lo fa uno script Google Apps Script (`strumenti/email-biglietti.gs`) installato con il Gmail del comitato. Istruzioni passo passo in **Gestione → Informative e contatti → Email dei biglietti**. Lo script riceve solo il codice del biglietto, legge la prenotazione dal database e scrive solo all'email della prenotazione (max 3 invii per biglietto). Limite Gmail: circa 100 email al giorno.
+
 ## File senza Storage
 
 Foto e file (bacheca, galleria eventi, pagine, archivio) sono salvati in Firestore, spezzati in parti da ~700 KB (`file/{id}` + `file/{id}/parti/{n}`), fino a 8 MB per file; le foto vengono ridotte a 1600 px. Il piano gratuito offre 1 GB di database: centinaia di foto e documenti. Con il piano Blaze si potrà passare a Storage cambiando solo `src/lib/file.ts`.

@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { FirebaseError } from 'firebase/app';
 import { ascoltaEvento, creaPrenotazione, ErrorePrenotazione } from '../lib/dati';
-import { asportoDisponibile, dataBreve, etichettaPubblico, iscrizioniAperte } from '../lib/format';
+import { asportoDisponibile, avvisoArrivo, dataBreve, dove, etichettaPubblico, iscrizioniAperte } from '../lib/format';
 import type { Evento, Modalita, Partecipante } from '../types';
 import { Copertina, scurisci } from '../components/CardEvento';
 import { Icona } from '../components/Icona';
 import { Firma } from '../components/Firma';
 import { useTesti } from '../lib/testi';
+import { useEmailBiglietti } from '../lib/emailBiglietti';
 import { Testo } from '../components/TestoRicco';
 import { Allegati } from '../components/File';
 
@@ -15,6 +16,7 @@ export function EventoPagina() {
   const { id = '' } = useParams();
   const [ev, setEv] = useState<Evento | null | undefined>(undefined);
   const [errore, setErrore] = useState('');
+  const { contatti } = useTesti();
 
   useEffect(() => ascoltaEvento(id, setEv, () => setEv(null)), [id]);
 
@@ -28,6 +30,8 @@ export function EventoPagina() {
     );
 
   const aperte = iscrizioniAperte(ev);
+  const luogo = dove(ev, contatti.indirizzo);
+  const arrivo = avvisoArrivo(ev);
   return (
     <div className="pagina-evento">
       <div className="testata-evento">
@@ -37,7 +41,7 @@ export function EventoPagina() {
       <main className="contenuto">
         <div>
           <div className="card-quando" style={{ color: scurisci(ev.colore) }}>
-            {dataBreve(ev.data)}{ev.luogo ? `, ${ev.luogo}` : ''}
+            {dataBreve(ev.data)}
           </div>
           <h1 className="titolo-evento">{ev.titolo}</h1>
           <div className="meta">
@@ -45,6 +49,14 @@ export function EventoPagina() {
             {ev.prezzo && <span>{ev.prezzo}</span>}
           </div>
         </div>
+        {(luogo.testo || arrivo) && (
+          <div className="info-evento">
+            {luogo.testo && (
+              <p><strong>Dove:</strong> {luogo.mappa ? <a href={luogo.mappa} target="_blank" rel="noopener noreferrer">{luogo.testo}</a> : luogo.testo}</p>
+            )}
+            {arrivo && <p><strong>Arrivo:</strong> {arrivo}</p>}
+          </div>
+        )}
         <Testo testo={ev.descrizione} className="descrizione-evento" />
         <Allegati lista={ev.galleria} />
         {errore && <p className="avviso errore">{errore}</p>}
@@ -60,6 +72,7 @@ export function EventoPagina() {
 
 function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) => void }) {
   const testi = useTesti();
+  const emailAttiva = !!useEmailBiglietti();
   const navigate = useNavigate();
   const pasto = ev.tipo === 'pasto';
   const conBambini = !pasto && ev.pubblico !== 'adulti';
@@ -199,7 +212,9 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
           <label>Nome<input value={nome} onChange={(e) => setNome(e.target.value)} autoComplete="given-name" /></label>
           <label>Cognome<input value={cognome} onChange={(e) => setCognome(e.target.value)} autoComplete="family-name" /></label>
         </div>
-        <label>Email<input type="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></label>
+        <label>Email<input type="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+          {emailAttiva && <span className="nota">Ti mandiamo qui il biglietto. Se non arriva entro qualche minuto, guarda nello Spam o in Promozioni.</span>}
+        </label>
         {!conBambini && (
           <div className="contatore">
             <span>{modalita === 'asporto' ? 'Porzioni' : 'Persone'}</span>

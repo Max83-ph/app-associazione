@@ -1,13 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../../lib/auth';
 import { Link } from 'react-router-dom';
-import { cancellaPrenotazioni, eventiDaPulire, type EventoDaPulire } from '../../lib/pulizia';
+import { ascoltaRegistroPulizie, cancellaPrenotazioni, eventiDaPulire, MESI_CONSERVAZIONE, registraPulizia, type EventoDaPulire, type Pulizia } from '../../lib/pulizia';
 import { dataBreve } from '../../lib/format';
 import { Icona } from '../../components/Icona';
 
 const SCELTE = [6, 12, 24];
 
 export function PuliziaDati() {
-  const [mesi, setMesi] = useState(12);
+  const { utente } = useAuth();
+  const [mesi, setMesi] = useState(MESI_CONSERVAZIONE);
+  const [registro, setRegistro] = useState<Pulizia[] | null>(null);
+  useEffect(() => ascoltaRegistroPulizie(setRegistro, () => setRegistro([])), []);
+  // Arrivando dall'avviso in Gestione, l'elenco da approvare è già pronto.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { cerca(MESI_CONSERVAZIONE); }, []);
   const [lista, setLista] = useState<EventoDaPulire[] | null>(null);
   const [stato, setStato] = useState('');
   const [errore, setErrore] = useState('');
@@ -31,7 +38,7 @@ export function PuliziaDati() {
 
   const pulisci = async () => {
     if (!lista?.length) return;
-    if (!confirm(`Cancellare definitivamente ${totale} prenotazioni di ${lista.length} eventi? Non si può annullare.`)) return;
+    if (!confirm(`Approvi la cancellazione definitiva di ${totale} prenotazioni di ${lista.length} eventi? Non si può annullare.`)) return;
     setErrore('');
     let n = 0;
     try {
@@ -40,6 +47,7 @@ export function PuliziaDati() {
         n += await cancellaPrenotazioni(x.ev.id);
       }
       setFatto(n);
+      await registraPulizia(utente?.email ?? '', mesi, lista, n).catch(() => undefined);
       setLista([]);
     } catch (e) {
       setErrore(`Interrotto dopo ${n} prenotazioni: ${e instanceof Error ? e.message : 'errore'}. Riprova.`);
@@ -82,9 +90,26 @@ export function PuliziaDati() {
                 <li key={x.ev.id}><strong>{x.ev.titolo}</strong><span>{dataBreve(x.ev.data)} · {x.prenotazioni} prenotazioni</span></li>
               ))}
             </ul>
-            <button type="button" className="bottone pericolo" disabled={!!stato} onClick={pulisci}>{stato || `Cancella ${totale} prenotazioni`}</button>
+            <button type="button" className="bottone pericolo" disabled={!!stato} onClick={pulisci}>{stato || `Approva e cancella ${totale} prenotazioni`}</button>
           </section>
         )}
+
+        <section className="pannello">
+          <h2>Registro delle pulizie</h2>
+          <p className="nota">Ogni cancellazione approvata resta annotata qui: è la prova che i tempi dichiarati nell'informativa vengono rispettati.</p>
+          {registro === null && <p className="vuoto">Caricamento…</p>}
+          {registro?.length === 0 && <p className="vuoto">Nessuna pulizia ancora.</p>}
+          {registro && registro.length > 0 && (
+            <ul className="elenco-import">
+              {registro.map((r) => (
+                <li key={r.id}>
+                  <strong>{r.quando?.toDate().toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}: {r.prenotazioni} prenotazioni</strong>
+                  <span>{r.eventi.length} eventi conclusi da oltre {r.mesi} mesi · approvata da {r.da || 'organizzatore'}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         <section className="pannello">
           <h2>Testi privacy</h2>

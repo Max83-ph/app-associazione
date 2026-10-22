@@ -5,6 +5,7 @@ import { auth } from '../../firebase';
 import { useAuth } from '../../lib/auth';
 import { ascoltaTuttiGliEventi } from '../../lib/dati';
 import { ascoltaSoci } from '../../lib/soci';
+import { contaDaPulire, MESI_CONSERVAZIONE } from '../../lib/pulizia';
 import { dataBreve } from '../../lib/format';
 import { NOME_ASSOCIAZIONE } from '../../config';
 import { Icona, type NomeIcona } from '../../components/Icona';
@@ -25,6 +26,16 @@ export function AdminHome() {
   const [soci, setSoci] = useState<Socio[] | null>(null);
   useEffect(() => ascoltaTuttiGliEventi(setEventi, () => setEventi([])), []);
   useEffect(() => ascoltaSoci(setSoci, () => setSoci([])), []);
+  // Controllo automatico: prenotazioni oltre il periodo di conservazione, da far approvare.
+  const [daPulire, setDaPulire] = useState(0);
+  const numEventi = eventi?.length ?? 0;
+  useEffect(() => {
+    if (!eventi?.length) return;
+    let vivo = true;
+    contaDaPulire(eventi).then((n) => vivo && setDaPulire(n)).catch(() => undefined);
+    return () => { vivo = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numEventi]);
 
   // eslint-disable-next-line react-hooks/purity
   const adesso = Date.now();
@@ -86,7 +97,7 @@ export function AdminHome() {
         {utente?.email && <p className="nota">Accesso come {utente.email}</p>}
       </header>
       <main className="contenuto">
-        {(prossimo || daApprovare > 0) && (
+        {(prossimo || daApprovare > 0 || daPulire > 0) && (
           <div className="cruscotto">
             {prossimo && (
               <Link to={`/admin/eventi/${prossimo.id}/iscritti`} className="cruscotto-voce">
@@ -100,6 +111,13 @@ export function AdminHome() {
                 <span className="cruscotto-etichetta">Da fare</span>
                 <strong>{daApprovare} {daApprovare === 1 ? 'richiesta' : 'richieste'} di iscrizione</strong>
                 <span>Da approvare o respingere</span>
+              </Link>
+            )}
+            {daPulire > 0 && (
+              <Link to="/admin/privacy" className="cruscotto-voce attenzione">
+                <span className="cruscotto-etichetta">Privacy</span>
+                <strong>Pulizia dati da approvare</strong>
+                <span>{daPulire} prenotazioni di eventi conclusi da oltre {MESI_CONSERVAZIONE} mesi</span>
               </Link>
             )}
           </div>

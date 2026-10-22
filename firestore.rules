@@ -348,6 +348,12 @@ service cloud.firestore {
       }
     }
 
+    // Registro delle pulizie dei dati (GDPR): solo organizzatori, voci non modificabili.
+    match /registroPulizie/{id} {
+      allow read, create: if isOrg();
+      allow update, delete: if false;
+    }
+
     // Bacheca: la leggono i soci attivi, lo staff e gli organizzatori.
     match /avvisi/{id} {
       allow read: if socioAttivo() || isStaff();

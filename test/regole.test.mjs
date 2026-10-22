@@ -179,3 +179,12 @@ test('pulizia dati: solo gli organizzatori contano e cancellano le prenotazioni'
   const t = { chiSiamo: 'a', informativaPrivacy: 'b', liberatoriaFoto: 'c', informativaSoci: 'd', liberatoriaSoci: 'e', privacySito: 'f', contatti: {} };
   await assertSucceeds(setDoc(doc(db('org'), 'contenuti/testi'), t));
 });
+
+test('registro pulizie: solo organizzatori, voci non modificabili', async () => {
+  await assertFails(setDoc(doc(db('mario'), 'registroPulizie/r1'), { prenotazioni: 3 }));
+  await assertSucceeds(setDoc(doc(db('org'), 'registroPulizie/r1'), { prenotazioni: 3 }));
+  await assertFails(setDoc(doc(db('org'), 'registroPulizie/r1'), { prenotazioni: 0 }));
+  await assertFails(deleteDoc(doc(db('org'), 'registroPulizie/r1')));
+  await assertFails(getDocs(collection(db('mario'), 'registroPulizie')));
+  await assertSucceeds(getDocs(collection(db('org'), 'registroPulizie')));
+});

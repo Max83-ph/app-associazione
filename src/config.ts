@@ -24,7 +24,7 @@ export const INFORMATIVA_PRIVACY = `**Informativa sul trattamento dei dati perso
 
 **Perché:** gestire la prenotazione, l'ingresso all'evento (biglietto con QR), l'invio del biglietto via email ed eventuali comunicazioni sull'evento (es. variazioni di orario). La base giuridica è l'esecuzione della richiesta di partecipazione; per foto e video è il consenso, facoltativo.
 
-**A chi:** i dati sono trattati solo dai volontari incaricati dall'associazione. Sono conservati sui servizi di Google (Firebase e Gmail), che agisce come responsabile del trattamento e può trattarli anche fuori dall'Unione Europea con le garanzie previste dal Regolamento. Non sono ceduti né diffusi.
+**A chi:** i dati sono trattati solo dai volontari incaricati dall'associazione. Sono conservati su server Google in Italia (Firebase, Milano); per l'invio delle email si usa Gmail. Google agisce come responsabile del trattamento; per alcuni servizi (account di accesso, email, assistenza) può trattarli anche fuori dall'Unione Europea con le garanzie previste dal Regolamento. Non sono ceduti né diffusi.
 
 **Per quanto tempo:** fino a 12 mesi dalla data dell'evento, poi vengono cancellati.
 
@@ -48,7 +48,7 @@ export const INFORMATIVA_SOCI = `**Informativa sul trattamento dei dati personal
 
 **Perché:** registrazione e iscrizione all'associazione, tesseramento annuale, copertura assicurativa dei soci, comunicazioni associative (bacheca, gruppo WhatsApp e mailing list solo se scelti) e adempimenti previsti dallo statuto e dalla legge. La base giuridica è il rapporto associativo e gli obblighi di legge; per WhatsApp, mailing list e foto è il consenso, facoltativo.
 
-**A chi:** solo ai volontari incaricati dall'associazione; alle compagnie assicurative e agli enti pubblici quando previsto dalla legge. I dati sono conservati sui servizi di Google (Firebase e Gmail), che agisce come responsabile del trattamento e può trattarli anche fuori dall'Unione Europea con le garanzie previste dal Regolamento. Non sono ceduti né diffusi.
+**A chi:** solo ai volontari incaricati dall'associazione; alle compagnie assicurative e agli enti pubblici quando previsto dalla legge. I dati sono conservati su server Google in Italia (Firebase, Milano); per l'invio delle email si usa Gmail. Google agisce come responsabile del trattamento; per alcuni servizi (account di accesso, email, assistenza) può trattarli anche fuori dall'Unione Europea con le garanzie previste dal Regolamento. Non sono ceduti né diffusi.
 
 **Categorie particolari di dati** (es. salute): sono trattate solo se le comunichi tu e con il tuo consenso esplicito.
 
@@ -74,7 +74,7 @@ Titolare del trattamento è ${TITOLARE}, ${SEDE}, email ${CONTATTI.email}.
 
 ## Fornitori
 
-L'app usa i servizi di Google (Firebase per ospitare l'app e i dati, Gmail per l'invio dei biglietti e delle comunicazioni). Google agisce come responsabile del trattamento e può trattare i dati anche fuori dall'Unione Europea con le garanzie previste dal Regolamento UE 2016/679 (clausole contrattuali standard e Data Privacy Framework UE-USA).
+L'app usa i servizi di Google, che agisce come responsabile del trattamento: Firebase per ospitare l'app e i dati, con il database su server in Italia (Milano, regione europe-west8), e Gmail per l'invio dei biglietti e delle comunicazioni. Gli account di accesso (Firebase Authentication), Gmail e l'eventuale assistenza tecnica possono comportare trattamenti fuori dall'Unione Europea, con le garanzie previste dal Regolamento UE 2016/679 (clausole contrattuali standard e Data Privacy Framework UE-USA).
 
 ## Cookie e memoria del telefono
 

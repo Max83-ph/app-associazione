@@ -7,6 +7,9 @@ export function Layout() {
   return (
     <div className="app">
       <Outlet />
+      <footer className="pie">
+        <Link to="/privacy">Privacy e cookie</Link>
+      </footer>
       <nav className="tabbar" aria-label="Sezioni">
         <NavLink to="/" end>Eventi</NavLink>
         <NavLink to="/carnevale">Carnevale</NavLink>

@@ -251,10 +251,11 @@ service cloud.firestore {
         && request.resource.data.url is string
         && (request.resource.data.url == '' || request.resource.data.url.matches('^https://script[.]google[.]com/macros/s/[A-Za-z0-9_-]+/exec$'));
       allow write: if isOrg() && id == 'testi'
-        && request.resource.data.keys().hasOnly(['chiSiamo', 'informativaPrivacy', 'liberatoriaFoto',
+        && request.resource.data.keys().hasOnly(['chiSiamo', 'informativaPrivacy', 'liberatoriaFoto', 'privacySito',
              'informativaSoci', 'liberatoriaSoci', 'contatti', 'aggiornatoDa', 'aggiornatoIl'])
         && request.resource.data.chiSiamo is string && request.resource.data.chiSiamo.size() <= 20000
         && request.resource.data.informativaPrivacy is string && request.resource.data.informativaPrivacy.size() <= 20000
+        && (!('privacySito' in request.resource.data) || (request.resource.data.privacySito is string && request.resource.data.privacySito.size() <= 20000))
         && request.resource.data.liberatoriaFoto is string && request.resource.data.liberatoriaFoto.size() <= 20000
         && request.resource.data.informativaSoci is string && request.resource.data.informativaSoci.size() <= 20000
         && request.resource.data.liberatoriaSoci is string && request.resource.data.liberatoriaSoci.size() <= 20000

@@ -6,7 +6,7 @@ import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { EventoPagina } from './pages/EventoPagina';
 import { Accesso } from './pages/Accesso';
-import { Carnevale, Info } from './pages/Statiche';
+import { Carnevale, Info, Privacy } from './pages/Statiche';
 import { PaginaLibera } from './pages/Pagine';
 import { PaginaComunicazioniPubblica } from './pages/Comunicazioni';
 
@@ -31,6 +31,7 @@ const GestioneArchivio = lazy(() => import('./pages/admin/GestioneArchivio').the
 const ImportaSoci = lazy(() => import('./pages/admin/ImportaSoci').then((m) => ({ default: m.ImportaSoci })));
 const GestioneComunicazioni = lazy(() => import('./pages/admin/GestioneComunicazioni').then((m) => ({ default: m.GestioneComunicazioni })));
 const ModificaComunicazioni = lazy(() => import('./pages/admin/GestioneComunicazioni').then((m) => ({ default: m.ModificaComunicazioni })));
+const PuliziaDati = lazy(() => import('./pages/admin/PuliziaDati').then((m) => ({ default: m.PuliziaDati })));
 const Ingresso = lazy(() => import('./pages/staff/Ingresso').then((m) => ({ default: m.Ingresso })));
 function Protetta({ livello, children }: { livello: 'staff' | 'organizzatore'; children: ReactNode }) {
   const { caricamento, isStaff, isOrganizzatore } = useAuth();
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="soci" element={<AreaSoci />} />
             <Route path="soci/iscrizione" element={<Iscrizione />} />
             <Route path="info" element={<Info />} />
+            <Route path="privacy" element={<Privacy />} />
             <Route path="pagina/:id" element={<PaginaLibera />} />
             <Route path="c/:codice" element={<PaginaComunicazioniPubblica />} />
             <Route path="chi-siamo" element={<Navigate to="/info" replace />} />
@@ -74,6 +76,7 @@ export default function App() {
             <Route path="admin/pagine/:id" element={<Protetta livello="organizzatore"><ModificaPagina /></Protetta>} />
             <Route path="admin/comunicazioni" element={<Protetta livello="organizzatore"><GestioneComunicazioni /></Protetta>} />
             <Route path="admin/comunicazioni/:codice" element={<Protetta livello="organizzatore"><ModificaComunicazioni /></Protetta>} />
+            <Route path="admin/privacy" element={<Protetta livello="organizzatore"><PuliziaDati /></Protetta>} />
             <Route path="admin/archivio" element={<Protetta livello="organizzatore"><GestioneArchivio /></Protetta>} />
           </Route>
           <Route path="biglietto/:codice" element={<Biglietto />} />

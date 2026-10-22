@@ -143,6 +143,7 @@ export function Biglietto() {
         </div>
       )}
       <Link to="/" className="link-chiaro">Torna agli eventi</Link>
+      <Link to="/privacy" className="link-chiaro piccolo">Privacy e cookie</Link>
     </div>
   );
 }

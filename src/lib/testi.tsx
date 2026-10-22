@@ -8,6 +8,7 @@ import {
   LIBERATORIA_FOTO,
   LIBERATORIA_SOCI,
   NOME_ASSOCIAZIONE,
+  PRIVACY_SITO,
 } from '../config';
 
 /** Testi dell'associazione modificabili dal pannello (Gestione → Testi). */
@@ -26,6 +27,8 @@ export interface Testi {
   liberatoriaFoto: string;
   informativaSoci: string;
   liberatoriaSoci: string;
+  /** Pagina "Privacy e cookie" dell'app. */
+  privacySito: string;
   contatti: Contatti;
 }
 
@@ -39,6 +42,7 @@ export const TESTI_PREDEFINITI: Testi = {
   liberatoriaFoto: LIBERATORIA_FOTO,
   informativaSoci: INFORMATIVA_SOCI,
   liberatoriaSoci: LIBERATORIA_SOCI,
+  privacySito: PRIVACY_SITO,
   contatti: { ...CONTATTI },
 };
 
@@ -54,6 +58,7 @@ function unisci(salvati: Partial<Testi> | undefined): Testi {
     liberatoriaFoto: testo('liberatoriaFoto'),
     informativaSoci: testo('informativaSoci'),
     liberatoriaSoci: testo('liberatoriaSoci'),
+    privacySito: testo('privacySito'),
     contatti: { ...TESTI_PREDEFINITI.contatti, ...(s.contatti ?? {}) },
   };
 }

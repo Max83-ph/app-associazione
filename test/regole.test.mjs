@@ -2,7 +2,7 @@
 import { test, before, after } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, getDocs, collection, query, where, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, deleteDoc, collection, query, where, serverTimestamp, getCountFromServer } from 'firebase/firestore';
 
 let env;
 const SOCIO = { nome: 'Mario', cognome: 'Rossi', codiceFiscale: 'RSSMRA80A01L750X', stato: 'attivo' };
@@ -163,4 +163,19 @@ test('configurazione email: solo organizzatori e solo URL di Apps Script', async
   await assertFails(setDoc(doc(db('org'), 'contenuti/email'), { url: 'https://cattivo.example.com/exec' }));
   await assertSucceeds(setDoc(doc(db('org'), 'contenuti/email'), { url: 'https://script.google.com/macros/s/AKfy_cb-123/exec' }));
   await assertSucceeds(setDoc(doc(db('org'), 'contenuti/email'), { url: '' }));
+});
+
+test('pulizia dati: solo gli organizzatori contano e cancellano le prenotazioni', async () => {
+  await env.withSecurityRulesDisabled(async (c) => {
+    await setDoc(doc(c.firestore(), 'bookings/VECCHIO12345'), { eventId: 'evVecchio', nome: 'A', statoBiglietto: 'valido' });
+  });
+  const q = (d) => query(collection(d, 'bookings'), where('eventId', '==', 'evVecchio'));
+  await assertFails(getCountFromServer(q(db(null))));
+  await assertFails(getCountFromServer(q(db('mario'))));
+  await assertSucceeds(getCountFromServer(q(db('org'))));
+  await assertFails(deleteDoc(doc(db('mario'), 'bookings/VECCHIO12345')));
+  await assertSucceeds(deleteDoc(doc(db('org'), 'bookings/VECCHIO12345')));
+  // Testi: si può salvare anche la pagina Privacy e cookie.
+  const t = { chiSiamo: 'a', informativaPrivacy: 'b', liberatoriaFoto: 'c', informativaSoci: 'd', liberatoriaSoci: 'e', privacySito: 'f', contatti: {} };
+  await assertSucceeds(setDoc(doc(db('org'), 'contenuti/testi'), t));
 });

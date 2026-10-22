@@ -68,7 +68,10 @@ export function AdminHome() {
     },
     {
       titolo: 'Impostazioni',
-      voci: [{ a: '/admin/utenti', icona: 'modifica', titolo: 'Staff e organizzatori', sotto: 'Chi può gestire l\'app' }],
+      voci: [
+        { a: '/admin/utenti', icona: 'modifica', titolo: 'Staff e organizzatori', sotto: 'Chi può gestire l\'app' },
+        { a: '/admin/privacy', icona: 'lucchetto', titolo: 'Privacy e pulizia dati', sotto: 'Cancella le vecchie prenotazioni' },
+      ],
     },
   ];
 

@@ -26,6 +26,7 @@ const tratti: Record<string, string[]> = {
   testo: ['M5 6h14', 'M5 10h14', 'M5 14h9', 'M5 18h11'],
   scansiona: ['M4 8V5a1 1 0 0 1 1-1h3', 'M16 4h3a1 1 0 0 1 1 1v3', 'M20 16v3a1 1 0 0 1-1 1h-3', 'M8 20H5a1 1 0 0 1-1-1v-3', 'M7 12h10'],
   freccia: ['M9 6l6 6-6 6'],
+  lucchetto: ['M6 11h12v9H6z', 'M8.5 11V8a3.5 3.5 0 0 1 7 0v3'],
 };
 
 export type NomeIcona = IconaEvento | keyof typeof tratti;

@@ -68,3 +68,16 @@ export function Carnevale() {
     </>
   );
 }
+
+export function Privacy() {
+  const { privacySito } = useTesti();
+  return (
+    <>
+      <Intestazione titolo="Privacy e cookie" />
+      <main className="contenuto testo-lungo">
+        <Testo testo={privacySito} />
+        <p className="nota">Le informative complete per chi prenota un evento e per i soci sono mostrate nei rispettivi moduli di iscrizione.</p>
+      </main>
+    </>
+  );
+}

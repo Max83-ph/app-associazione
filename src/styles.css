@@ -567,3 +567,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--verde); outline:
 .avviso-arrivo { margin: 4px 0 0; padding: 8px 12px; border-radius: 10px; background: var(--giallo-tenue); color: var(--giallo-testo); font-weight: 600; font-size: 14px; text-align: center; }
 .nota-email { margin: 8px auto 0; max-width: 34ch; padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,.14); font-size: 14px; line-height: 1.4; }
 .passi { margin: 8px 0 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.pie { text-align: center; padding: 4px 20px 12px; font-size: 13px; }
+.pie a { color: var(--grigio); }
+.link-chiaro.piccolo { font-size: 13px; opacity: .8; }

@@ -13,6 +13,7 @@ import {
 } from '../../lib/dati';
 import { codiceLeggibile, normalizzaCodice } from '../../lib/codice';
 import { descriviModalita } from '../../lib/biglietto';
+import { euro, totaleConMenu } from '../../lib/menu';
 import { dataBreve } from '../../lib/format';
 import { Icona } from '../../components/Icona';
 import type { Evento, Prenotazione } from '../../types';
@@ -148,12 +149,34 @@ function PannelloEsito({ esito, evento }: { esito: Esito; evento?: Evento }) {
       {esito.tipo === 'usato' && p.checkInAt && <div>Entrato alle {p.checkInAt.toDate().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</div>}
       {p.partecipanti.length > 0 && <div>{p.partecipanti.map((b) => `${b.nome} (${b.eta})`).join(', ')}</div>}
       {p.consensi.liberatoriaFoto === false && <div className="etichetta etichetta-giallo">Niente foto</div>}
+      {!!p.ordine?.length && <OrdineEsito p={p} evento={evento} />}
       {(esito.tipo === 'valido' || esito.tipo === 'usato') && (
         p.pagamento.stato === 'da_pagare' ? (
-          <button type="button" className="bottone scuro" onClick={() => segnaPagamento(p.id, true)}>Da pagare in loco: segna pagato</button>
+          <button type="button" className="bottone scuro" onClick={() => segnaPagamento(p.id, true, p.ordine?.length ? p.totale ?? 0 : undefined)}>
+            {p.ordine?.length ? `Incassati ${euro(p.totale ?? 0)}: segna pagato` : 'Da pagare in loco: segna pagato'}
+          </button>
         ) : (
-          <div>Pagamento registrato</div>
+          <div>Pagamento registrato{p.pagamento.importo ? ` (${euro(p.pagamento.importo)})` : ''}</div>
         )
+      )}
+    </div>
+  );
+}
+
+/** Ordine d'asporto: piatti, quantità e cifra da incassare. */
+function OrdineEsito({ p, evento }: { p: Prenotazione; evento?: Evento }) {
+  const ricalcolato = totaleConMenu(p, evento?.menuAsporto);
+  return (
+    <div className="ordine-esito">
+      <ul>
+        {p.ordine!.map((v) => <li key={v.id}><span>{v.quantita} × {v.nome}</span><span>{euro(v.prezzo * v.quantita)}</span></li>)}
+      </ul>
+      <div className="ordine-esito-totale">
+        <span>{p.pagamento.stato === 'da_pagare' ? 'Da incassare' : 'Totale'}</span>
+        <strong>{euro(p.totale ?? 0)}</strong>
+      </div>
+      {ricalcolato !== null && ricalcolato !== p.totale && (
+        <div className="nota">Attenzione: con i prezzi attuali del menù farebbe {euro(ricalcolato)} (prezzi cambiati dopo la prenotazione).</div>
       )}
     </div>
   );

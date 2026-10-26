@@ -5,10 +5,11 @@ import { ascoltaEvento, salvaEvento, type DatiEvento } from '../../lib/dati';
 import { perInputDataOra } from '../../lib/format';
 import { Icona } from '../../components/Icona';
 import { useTesti } from '../../lib/testi';
+import { EditorMenu } from './EditorMenu';
 import { ModificaAllegati } from '../../components/File';
 import { EditorTesto } from '../../components/TestoRicco';
 import { eliminaFiles, type RifFile } from '../../lib/file';
-import type { Evento, IconaEvento, Pubblico, StatoEvento, TipoEvento } from '../../types';
+import type { Evento, IconaEvento, Pubblico, StatoEvento, TipoEvento, VoceMenu } from '../../types';
 
 // Verde e giallo sociali per primi, poi tinte che stanno bene accanto.
 const COLORI = ['#1E6B45', '#E0AE1F', '#2E5E8C', '#8A4E7A', '#C2532C', '#3E7F7A'];
@@ -33,6 +34,7 @@ interface Bozza {
   postiMax: number;
   asportoAttivo: boolean;
   porzioniMaxGiornoEvento: number;
+  menuAsporto: VoceMenu[];
   privacy: boolean;
   liberatoriaFoto: boolean;
 }
@@ -56,6 +58,7 @@ const vuota: Bozza = {
   postiMax: 60,
   asportoAttivo: true,
   porzioniMaxGiornoEvento: 20,
+  menuAsporto: [],
   privacy: true,
   liberatoriaFoto: true,
 };
@@ -80,6 +83,7 @@ function daEvento(ev: Evento): Bozza {
     postiMax: ev.postiMax,
     asportoAttivo: ev.asportoAttivo,
     porzioniMaxGiornoEvento: ev.porzioniMaxGiornoEvento,
+    menuAsporto: ev.menuAsporto ?? [],
     privacy: ev.documentiRichiesti.privacy,
     liberatoriaFoto: ev.documentiRichiesti.liberatoriaFoto,
   };
@@ -147,6 +151,7 @@ export function EventoForm() {
       postiMax: b.postiMax,
       asportoAttivo: b.tipo === 'pasto' && b.asportoAttivo,
       porzioniMaxGiornoEvento: b.porzioniMaxGiornoEvento,
+      menuAsporto: b.tipo === 'pasto' ? b.menuAsporto.filter((v) => v.nome.trim()).map((v) => ({ ...v, nome: v.nome.trim(), descrizione: (v.descrizione ?? '').trim() })) : [],
       documentiRichiesti: { privacy: b.privacy, liberatoriaFoto: b.tipo !== 'pasto' && b.liberatoriaFoto },
     };
     setSalvo(true);
@@ -224,6 +229,12 @@ export function EventoForm() {
                     <input type="number" min={0} max={1000} value={b.porzioniMaxGiornoEvento} onChange={(e) => set('porzioniMaxGiornoEvento', Number(e.target.value))} />
                     <span className="nota">Fino alla sera prima l'asporto è illimitato; dal giorno dell'evento si accetta solo fino a questo totale.</span>
                   </label>
+                )}
+                {b.asportoAttivo && (
+                  <>
+                    <div className="etichetta-campo">Menù d'asporto con prezzi</div>
+                    <EditorMenu valore={b.menuAsporto} onChange={(menuAsporto) => setB((x) => (x ? { ...x, menuAsporto } : x))} />
+                  </>
                 )}
               </>
             )}

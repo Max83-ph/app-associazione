@@ -2,7 +2,7 @@
 import { test, before, after } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, getDocs, deleteDoc, collection, query, where, serverTimestamp, getCountFromServer } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, deleteDoc, collection, query, where, serverTimestamp, getCountFromServer, writeBatch, increment, Timestamp } from 'firebase/firestore';
 
 let env;
 const SOCIO = { nome: 'Mario', cognome: 'Rossi', codiceFiscale: 'RSSMRA80A01L750X', stato: 'attivo' };
@@ -187,4 +187,43 @@ test('registro pulizie: solo organizzatori, voci non modificabili', async () => 
   await assertFails(deleteDoc(doc(db('org'), 'registroPulizie/r1')));
   await assertFails(getDocs(collection(db('mario'), 'registroPulizie')));
   await assertSucceeds(getDocs(collection(db('org'), 'registroPulizie')));
+});
+
+test('asporto con ordine dal menù: righe e totale solo per l\'asporto', async () => {
+  const data = Timestamp.fromMillis(Date.now() + 10 * 86400000);
+  const inizioGiorno = Timestamp.fromMillis(Date.now() + 9 * 86400000);
+  await env.withSecurityRulesDisabled(async (c) => {
+    await setDoc(doc(c.firestore(), 'events/evMenu'), {
+      titolo: 'Pranzo', data, tipo: 'pasto', stato: 'aperto', visibile: true, chiusuraIscrizioni: null,
+      postiMax: 50, postiOccupati: 0, asportoAttivo: true, porzioniPrenotate: 0, porzioniMaxGiornoEvento: 20, inizioGiorno,
+      documentiRichiesti: { privacy: true, liberatoriaFoto: false },
+    });
+  });
+  const ordine = [{ id: 'a1', nome: 'Agnolotti', prezzo: 800, quantita: 2, porzione: true }, { id: 'b1', nome: 'Acqua', prezzo: 100, quantita: 1, porzione: false }];
+  const prenota = (code, extra) => {
+    const d = db(null);
+    const b = writeBatch(d);
+    const q = extra.quantita ?? 2;
+    b.set(doc(d, `bookings/${code}`), {
+      eventId: 'evMenu', eventoTitolo: 'Pranzo', eventoData: data, modalita: 'asporto', nome: 'Anna', cognome: 'Bianchi',
+      email: 'a@b.it', quantita: q, partecipanti: [], consensi: { privacy: true, liberatoriaFoto: null }, firma: null,
+      statoBiglietto: 'valido', checkInAt: null, createdAt: serverTimestamp(),
+      pagamento: { stato: 'da_pagare', importo: null, metodo: null, riferimentoTransazione: null }, ...extra,
+    });
+    const tavolo = extra.modalita === 'tavolo';
+    b.update(doc(d, 'events/evMenu'), {
+      ultimaPrenotazione: code,
+      ...(tavolo ? { postiOccupati: increment(q) } : { porzioniPrenotate: increment(q) }),
+    });
+    return b.commit();
+  };
+  await assertSucceeds(prenota('MENUOK123456', { ordine, totale: 1700 }));
+  await assertFails(prenota('MENUKO123456', { ordine, totale: 1700, modalita: 'tavolo' }));
+  await assertFails(prenota('MENUKO223456', { totale: 1700 }));
+  await assertFails(prenota('MENUKO323456', { ordine: [], totale: 0 }));
+  await assertFails(prenota('MENUKO423456', { ordine, totale: '17' }));
+  // Lo staff segna il pagamento con l'importo incassato.
+  await env.withSecurityRulesDisabled(async (c) => setDoc(doc(c.firestore(), 'users/staff1'), { ruolo: 'staff', email: 's@x.it', nome: 'S' }));
+  const { updateDoc } = await import('firebase/firestore');
+  await assertSucceeds(updateDoc(doc(db('staff1'), 'bookings/MENUOK123456'), { 'pagamento.stato': 'pagato_in_loco', 'pagamento.metodo': 'in_loco', 'pagamento.importo': 1700 }));
 });

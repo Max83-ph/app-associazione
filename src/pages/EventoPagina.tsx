@@ -11,6 +11,7 @@ import { useTesti } from '../lib/testi';
 import { useEmailBiglietti } from '../lib/emailBiglietti';
 import { Testo } from '../components/TestoRicco';
 import { Allegati } from '../components/File';
+import { creaOrdine, euro, haMenuAsporto, perCategoria, porzioniOrdine, totaleOrdine } from '../lib/menu';
 
 export function EventoPagina() {
   const { id = '' } = useParams();
@@ -87,6 +88,7 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
   const [cognome, setCognome] = useState('');
   const [email, setEmail] = useState('');
   const [quantita, setQuantita] = useState(1);
+  const [scelte, setScelte] = useState<Record<string, number>>({});
   const [partecipanti, setPartecipanti] = useState<Partecipante[]>([{ nome: '', cognome: '', eta: 6 }]);
   const [privacy, setPrivacy] = useState(false);
   const [liberatoria, setLiberatoria] = useState<boolean | null>(null);
@@ -99,7 +101,14 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
   if (!pasto && postiLiberi === 0) return <p className="avviso">Posti esauriti.</p>;
   if (pasto && tavoloEsaurito && !asportoPossibile) return <p className="avviso">Posti esauriti.</p>;
 
-  const q = conBambini ? partecipanti.length : quantita;
+  const conMenu = modalita === 'asporto' && haMenuAsporto(ev);
+  const menuVisibile = (ev.menuAsporto ?? []).filter((v) => v.disponibile !== false);
+  const ordine = conMenu ? creaOrdine(menuVisibile, scelte) : [];
+  const totale = totaleOrdine(ordine);
+  const porzioniMenu = porzioniOrdine(ordine);
+  const q = conBambini ? partecipanti.length : conMenu ? Math.max(1, porzioniMenu) : quantita;
+  const limiteMenu = Math.min(50, porzioniLibere);
+  const cambia = (id: string, d: number) => setScelte((s) => ({ ...s, [id]: Math.max(0, Math.min(20, (s[id] ?? 0) + d)) }));
   const problemi: string[] = [];
   if (!nome.trim() || !cognome.trim()) problemi.push('nome e cognome');
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) problemi.push('un\'email valida');
@@ -107,7 +116,8 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
   if (!privacy) problemi.push('la presa visione dell\'informativa');
   if (ev.documentiRichiesti.liberatoriaFoto && !pasto && liberatoria === null) problemi.push('la scelta sulla liberatoria foto');
   if (serveFirma && !firma) problemi.push('la firma');
-  if (q > massimo) problemi.push(`al massimo ${massimo} ${modalita === 'asporto' ? 'porzioni' : 'posti'}`);
+  if (conMenu && ordine.length === 0) problemi.push('almeno un piatto dal menù');
+  if (conMenu ? porzioniMenu > limiteMenu : q > massimo) problemi.push(conMenu ? `al massimo ${limiteMenu} porzioni` : `al massimo ${massimo} ${modalita === 'asporto' ? 'porzioni' : 'posti'}`);
 
   const invia = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +131,7 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
         cognome,
         email,
         quantita: q,
+        ...(conMenu ? { ordine, totale } : {}),
         partecipanti: conBambini
           ? partecipanti.map((p) => ({ nome: p.nome.trim(), cognome: p.cognome.trim(), eta: p.eta }))
           : [],
@@ -215,7 +226,7 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
         <label>Email<input type="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
           {emailAttiva && <span className="nota">Ti mandiamo qui il biglietto. Se non arriva entro qualche minuto, guarda nello Spam o in Promozioni.</span>}
         </label>
-        {!conBambini && (
+        {!conBambini && !conMenu && (
           <div className="contatore">
             <span>{modalita === 'asporto' ? 'Porzioni' : 'Persone'}</span>
             <div>
@@ -226,6 +237,39 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
           </div>
         )}
       </fieldset>
+
+      {conMenu && (
+        <fieldset className="menu-ordine">
+          <legend>Scegli dal menù</legend>
+          <span className="nota">Ordina solo quello che vuoi: paghi il totale al ritiro.</span>
+          {perCategoria(menuVisibile).map(([cat, voci]) => (
+            <div key={cat} className="menu-categoria">
+              <h3>{cat}</h3>
+              {voci.map((v) => {
+                const n = scelte[v.id] ?? 0;
+                return (
+                  <div key={v.id} className={n ? 'menu-piatto scelto' : 'menu-piatto'}>
+                    <div className="menu-piatto-testo">
+                      <span className="menu-piatto-nome">{v.nome}</span>
+                      {v.descrizione && <span className="nota">{v.descrizione}</span>}
+                      <span className="menu-piatto-prezzo">{euro(v.prezzo)}</span>
+                    </div>
+                    <div className="menu-piatto-contatore">
+                      <button type="button" aria-label={`Togli ${v.nome}`} disabled={n <= 0} onClick={() => cambia(v.id, -1)}>−</button>
+                      <output aria-live="polite">{n}</output>
+                      <button type="button" aria-label={`Aggiungi ${v.nome}`} disabled={n >= 20 || (v.porzione !== false && porzioniMenu >= limiteMenu)} onClick={() => cambia(v.id, 1)}>+</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+          <div className="menu-totale" aria-live="polite">
+            <span>{ordine.length ? `${ordine.reduce((s, v) => s + v.quantita, 0)} articoli` : 'Nessun piatto scelto'}</span>
+            <strong>Totale {euro(totale)}</strong>
+          </div>
+        </fieldset>
+      )}
 
       <fieldset>
         <legend>Documenti</legend>

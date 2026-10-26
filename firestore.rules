@@ -89,10 +89,14 @@ service cloud.firestore {
       return code.size() >= 10 && code.size() <= 16
         && d.keys().hasOnly(['eventId', 'eventoTitolo', 'eventoData', 'modalita', 'nome', 'cognome',
              'email', 'quantita', 'partecipanti', 'consensi', 'firma', 'statoBiglietto', 'checkInAt',
-             'createdAt', 'pagamento'])
+             'createdAt', 'pagamento', 'ordine', 'totale'])
         && testo(d.nome, 60) && testo(d.cognome, 60)
         && d.email is string && d.email.size() <= 120 && d.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
-        && d.quantita is int && d.quantita >= 1 && d.quantita <= 10
+        && d.quantita is int && d.quantita >= 1 && d.quantita <= (d.modalita == 'asporto' ? 50 : 10)
+        // Ordine d'asporto dal menù: righe e totale (i prezzi li ricontrolla lo staff all'ingresso).
+        && (!('ordine' in d) || (d.modalita == 'asporto' && d.ordine is list && d.ordine.size() >= 1 && d.ordine.size() <= 40
+              && d.totale is int && d.totale >= 0 && d.totale <= 200000))
+        && (!('totale' in d) || 'ordine' in d)
         && d.partecipanti is list && d.partecipanti.size() <= 10
         && d.consensi.privacy == true
         && (d.firma == null || (d.firma is string && d.firma.size() <= 300000))

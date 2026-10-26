@@ -5,6 +5,7 @@ import { codiceLeggibile } from './codice';
 import { avvisoArrivo, dataBreve, dove } from './format';
 import { NOME_ASSOCIAZIONE } from '../config';
 import { testiCorrenti, testoSemplice } from './testi';
+import { euro, righeOrdine } from './menu';
 
 /** Il QR contiene solo il codice del biglietto, nessun dato personale. */
 export const qrDataUrl = (codice: string, width = 480) =>
@@ -14,6 +15,7 @@ export const qrLinkDataUrl = (url: string, width = 1024) =>
   QRCode.toDataURL(url, { width, margin: 2, errorCorrectionLevel: 'M' });
 
 export function descriviModalita(p: Prenotazione): string {
+  if (p.modalita === 'asporto' && p.ordine?.length) return `Asporto, totale ${euro(p.totale ?? 0)}`;
   if (p.modalita === 'asporto') return `Asporto, ${p.quantita} ${p.quantita === 1 ? 'porzione' : 'porzioni'}`;
   if (p.modalita === 'tavolo') return `Al tavolo, ${p.quantita} ${p.quantita === 1 ? 'persona' : 'persone'}`;
   if (p.partecipanti.length) return `${p.partecipanti.length} ${p.partecipanti.length === 1 ? 'bambino' : 'bambini'}`;
@@ -56,9 +58,14 @@ export async function scaricaPdfBiglietto(p: Prenotazione, ev?: Evento | null) {
     `Nome: ${p.nome} ${p.cognome}`,
     descriviModalita(p),
     ...p.partecipanti.map((b) => `• ${b.nome} ${b.cognome}, ${b.eta} anni`),
-    `Pagamento: ${p.pagamento.stato === 'da_pagare' ? 'in loco' : 'effettuato'}`,
+    ...(p.ordine?.length ? righeOrdine(p.ordine).map((r) => `• ${r}`) : []),
+    p.ordine?.length
+      ? `Totale ${p.pagamento.stato === 'da_pagare' ? 'da pagare al ritiro' : 'pagato'}: ${euro(p.totale ?? 0)}`
+      : `Pagamento: ${p.pagamento.stato === 'da_pagare' ? 'in loco' : 'effettuato'}`,
   ];
-  pdf.text(righe, 14, 146);
+  // Le righe stanno tra y=146 e y=176: con un ordine lungo il carattere si rimpicciolisce.
+  pdf.setFontSize(Math.max(6.5, Math.min(11, 30 / (righe.length * 0.406))));
+  pdf.text(righe, 14, 146, { lineHeightFactor: 1.15 });
   const arrivo = ev ? avvisoArrivo(ev) : '';
   if (arrivo) {
     pdf.setFillColor(252, 241, 204);

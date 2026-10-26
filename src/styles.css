@@ -570,3 +570,61 @@ input:focus, select:focus, textarea:focus { border-color: var(--verde); outline:
 .pie { text-align: center; padding: 4px 20px 12px; font-size: 13px; }
 .pie a { color: var(--grigio); }
 .link-chiaro.piccolo { font-size: 13px; opacity: .8; }
+
+/* Menù d'asporto con prezzi */
+.menu-ordine { gap: 14px; }
+.menu-categoria { display: flex; flex-direction: column; gap: 6px; }
+.menu-categoria h3 { margin: 4px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--grigio); font-weight: 650; }
+.menu-piatto {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 12px; border: 1px solid var(--linea); border-radius: var(--r); background: var(--bianco);
+}
+.menu-piatto.scelto { border-color: var(--verde); background: var(--verde-tenue); }
+.menu-piatto-testo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.menu-piatto-nome { font-weight: 600; }
+.menu-piatto-prezzo { font-weight: 650; color: var(--verde); font-variant-numeric: tabular-nums; }
+.menu-piatto-contatore { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.menu-piatto-contatore button {
+  width: 40px; height: 40px; border-radius: 20px; border: 1px solid var(--bordo); background: var(--bianco);
+  font-weight: 600; font-size: 19px; color: var(--verde);
+}
+.menu-piatto-contatore button:disabled { opacity: 0.35; }
+.menu-piatto-contatore output { min-width: 20px; text-align: center; font-weight: 650; font-size: 17px; }
+.menu-totale {
+  position: sticky; bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: var(--r); background: var(--notte); color: var(--bianco); font-weight: 600;
+}
+.menu-totale strong { font-size: 19px; color: var(--giallo); font-variant-numeric: tabular-nums; }
+
+.ordine-biglietto { width: 100%; border-collapse: collapse; font-size: 14.5px; margin-top: 4px; }
+.ordine-biglietto td { padding: 4px 0; vertical-align: top; }
+.ordine-biglietto td:first-child { width: 38px; color: var(--grigio); }
+.ordine-biglietto td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ordine-biglietto tfoot td { border-top: 1px solid var(--linea); padding-top: 8px; font-weight: 700; font-size: 16px; }
+
+.ordine-esito { background: rgba(255, 255, 255, 0.7); color: var(--inchiostro); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.ordine-esito ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 15px; }
+.ordine-esito li { display: flex; justify-content: space-between; gap: 10px; }
+.ordine-esito li span:last-child { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ordine-esito-totale { display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid var(--bordo); padding-top: 6px; font-weight: 650; }
+.ordine-esito-totale strong { font-size: 28px; font-variant-numeric: tabular-nums; }
+
+.riepilogo-cucina { background: var(--bianco); border: 1px solid var(--linea); border-radius: 14px; padding: 12px 14px; }
+.riepilogo-cucina summary { font-weight: 650; cursor: pointer; }
+.riepilogo-cucina table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14.5px; }
+.riepilogo-cucina th { text-align: left; font-size: 12.5px; color: var(--grigio); font-weight: 600; padding: 4px 0; }
+.riepilogo-cucina td { padding: 5px 0; border-top: 1px solid var(--linea); }
+.riepilogo-cucina td:not(:first-child), .riepilogo-cucina th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.riepilogo-cucina tfoot td { font-weight: 700; }
+
+.editor-menu { display: flex; flex-direction: column; gap: 10px; }
+.voce-menu { border: 1px solid var(--linea); border-radius: var(--r); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: var(--bianco); }
+.voce-menu.finita { opacity: 0.6; }
+.voce-menu-riga { display: flex; gap: 8px; flex-wrap: wrap; }
+.voce-menu-riga .voce-nome { flex: 1 1 200px; }
+.voce-menu-riga .voce-prezzo { flex: 0 0 96px; }
+.voce-menu-riga .voce-categoria { flex: 0 0 130px; }
+.voce-menu-azioni { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.voce-spazio { flex: 1; }
+.voce-menu input[aria-invalid='true'] { border-color: var(--rosso); }
+.errore-testo { color: var(--rosso); }

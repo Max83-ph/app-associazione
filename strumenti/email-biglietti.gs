@@ -80,6 +80,7 @@ function inviaEmail(codice, p, ev, testi) {
     'Quando: ' + quando,
     dove ? 'Dove: ' + dove : '',
     'Prenotazione: ' + cosa,
+    righeOrdine(p).map(function (r) { return '  ' + r; }).join('\n'),
     'Codice biglietto: ' + leggibile,
     arrivo,
     '',
@@ -98,6 +99,7 @@ function inviaEmail(codice, p, ev, testi) {
     (dove ? '<p style="margin:0 0 12px">' + (mappa ? '<a href="' + mappa + '" style="color:#1e6b45">' + esc(dove) + '</a>' : esc(dove)) + '</p>' : '') +
     (arrivo ? '<p style="margin:12px 0;padding:10px 12px;background:#fcf1cc;color:#6a5000;border-radius:8px;font-weight:bold">' + esc(arrivo) + '</p>' : '') +
     '<p style="margin:12px 0 4px">' + esc(cosa) + (p.partecipanti && p.partecipanti.length ? ': ' + esc(p.partecipanti.map(function (b) { return b.nome + ' ' + b.cognome; }).join(', ')) : '') + '</p>' +
+    htmlOrdine(p) +
     '<p style="margin:0 0 16px;color:#56625b">Codice biglietto: <strong style="font-size:18px;letter-spacing:1px;color:#1a1f2b">' + leggibile + '</strong></p>' +
     '<p style="margin:0 0 16px"><a href="' + link + '" style="display:inline-block;background:#1e6b45;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:bold">Apri il biglietto con il QR</a></p>' +
     '<p style="margin:0;font-size:13px;color:#56625b">All\'ingresso mostra il QR dal telefono (o stampato). Se non riesci ad aprirlo, basta il codice qui sopra. ' +
@@ -110,8 +112,26 @@ function inviaEmail(codice, p, ev, testi) {
   GmailApp.sendEmail(p.email, 'Il tuo biglietto: ' + p.eventoTitolo, testo, opzioni);
 }
 
+function euro(c) {
+  return (Number(c || 0) / 100).toFixed(2).replace('.', ',') + ' €';
+}
+
+function righeOrdine(p) {
+  return (p.ordine || []).map(function (v) { return v.quantita + ' × ' + v.nome + '  ' + euro(v.prezzo * v.quantita); });
+}
+
+function htmlOrdine(p) {
+  if (!p.ordine || !p.ordine.length) return '';
+  return '<table style="width:100%;border-collapse:collapse;margin:0 0 12px;font-size:14px">' +
+    p.ordine.map(function (v) {
+      return '<tr><td style="padding:3px 0">' + v.quantita + ' × ' + esc(v.nome) + '</td><td style="padding:3px 0;text-align:right">' + euro(v.prezzo * v.quantita) + '</td></tr>';
+    }).join('') +
+    '<tr><td style="padding:6px 0;border-top:1px solid #e2e6df;font-weight:bold">Totale da pagare al ritiro</td><td style="padding:6px 0;border-top:1px solid #e2e6df;text-align:right;font-weight:bold">' + euro(p.totale) + '</td></tr></table>';
+}
+
 function descrivi(p) {
   const q = Number(p.quantita || 1);
+  if (p.modalita === 'asporto' && p.ordine && p.ordine.length) return 'Asporto, totale ' + euro(p.totale) + ' da pagare al ritiro';
   if (p.modalita === 'asporto') return 'Asporto, ' + q + (q === 1 ? ' porzione' : ' porzioni');
   if (p.modalita === 'tavolo') return 'Al tavolo, ' + q + (q === 1 ? ' persona' : ' persone');
   if (p.partecipanti && p.partecipanti.length) return p.partecipanti.length + (p.partecipanti.length === 1 ? ' bambino' : ' bambini');

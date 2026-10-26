@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { annullaPrenotazione, ascoltaEvento, ascoltaPrenotazione, ErrorePrenotazione } from '../lib/dati';
 import { descriviModalita, qrDataUrl, scaricaPdfBiglietto } from '../lib/biglietto';
+import { euro } from '../lib/menu';
 import { codiceLeggibile, normalizzaCodice } from '../lib/codice';
 import { avvisoArrivo, dataBreve, dove } from '../lib/format';
 import { useTesti } from '../lib/testi';
@@ -101,11 +102,21 @@ export function Biglietto() {
         <dl className="dettagli">
           <div><dt>Nome</dt><dd>{p.nome} {p.cognome}</dd></div>
           <div><dt>Prenotazione</dt><dd>{descriviModalita(p)}</dd></div>
-          <div><dt>Pagamento</dt><dd>{p.pagamento.stato === 'da_pagare' ? 'In loco' : 'Effettuato'}</dd></div>
+          <div><dt>Pagamento</dt><dd>{p.ordine?.length ? `${euro(p.totale ?? 0)} ${p.pagamento.stato === 'da_pagare' ? 'da pagare al ritiro' : 'pagato'}` : p.pagamento.stato === 'da_pagare' ? 'In loco' : 'Effettuato'}</dd></div>
           {p.consensi.liberatoriaFoto !== null && (
             <div><dt>Foto e video</dt><dd>{p.consensi.liberatoriaFoto ? 'Consentiti' : 'Non consentiti'}</dd></div>
           )}
         </dl>
+        {!!p.ordine?.length && (
+          <table className="ordine-biglietto">
+            <tbody>
+              {p.ordine.map((v) => (
+                <tr key={v.id}><td>{v.quantita} ×</td><td>{v.nome}</td><td>{euro(v.prezzo * v.quantita)}</td></tr>
+              ))}
+            </tbody>
+            <tfoot><tr><td /><td>Totale</td><td>{euro(p.totale ?? 0)}</td></tr></tfoot>
+          </table>
+        )}
         {p.partecipanti.length > 0 && (
           <ul className="bambini">
             {p.partecipanti.map((b, i) => <li key={i}>{b.nome} {b.cognome}, {b.eta} anni</li>)}

@@ -13,7 +13,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Evento, Modalita, Partecipante, Prenotazione, Ruolo, Utente } from '../types';
+import type { Evento, Modalita, Partecipante, Prenotazione, Ruolo, Utente, VoceOrdine } from '../types';
 import { nuovoCodice } from './codice';
 import { asportoDisponibile, iscrizioniAperte } from './format';
 
@@ -84,6 +84,9 @@ export interface NuovaPrenotazione {
   partecipanti: Partecipante[];
   liberatoriaFoto: boolean | null;
   firma: string | null;
+  /** Solo asporto con menù: piatti scelti e totale in centesimi. */
+  ordine?: VoceOrdine[];
+  totale?: number;
 }
 
 export class ErrorePrenotazione extends Error {}
@@ -131,6 +134,7 @@ export async function creaPrenotazione(eventId: string, p: NuovaPrenotazione): P
       email: p.email.trim().toLowerCase(),
       quantita: p.quantita,
       partecipanti: p.partecipanti,
+      ...(p.ordine?.length ? { ordine: p.ordine, totale: p.totale ?? 0 } : {}),
       consensi: { privacy: true, liberatoriaFoto: p.liberatoriaFoto },
       firma: p.firma,
       statoBiglietto: 'valido',
@@ -209,10 +213,12 @@ export async function annullaIngresso(codice: string) {
   await updateDoc(doc(prenotazioni, codice), { statoBiglietto: 'valido', checkInAt: null });
 }
 
-export async function segnaPagamento(codice: string, pagato: boolean) {
+/** importo in centesimi (es. il totale dell'ordine d'asporto), se noto. */
+export async function segnaPagamento(codice: string, pagato: boolean, importo?: number | null) {
   await updateDoc(doc(prenotazioni, codice), {
     'pagamento.stato': pagato ? 'pagato_in_loco' : 'da_pagare',
     'pagamento.metodo': pagato ? 'in_loco' : null,
+    ...(importo !== undefined ? { 'pagamento.importo': pagato ? importo : null } : {}),
   });
 }
 

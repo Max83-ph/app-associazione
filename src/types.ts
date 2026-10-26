@@ -39,9 +39,33 @@ export interface Evento {
   asportoAttivo: boolean;
   porzioniMaxGiornoEvento: number;
   porzioniPrenotate: number;
+  /** Menù d'asporto con prezzi: chi prende l'asporto sceglie i piatti e paga il totale. */
+  menuAsporto?: VoceMenu[];
   documentiRichiesti: { privacy: boolean; liberatoriaFoto: boolean };
   ultimaPrenotazione: string;
   ultimaAnnullata: string;
+}
+
+export interface VoceMenu {
+  id: string;
+  nome: string;
+  categoria: string;
+  descrizione?: string;
+  /** Prezzo in centesimi. */
+  prezzo: number;
+  /** Conta per il limite di porzioni d'asporto (no per le bevande). Se manca: sì. */
+  porzione?: boolean;
+  /** false = finito, non ordinabile. */
+  disponibile?: boolean;
+}
+
+/** Una riga dell'ordine d'asporto, con nome e prezzo del momento della prenotazione. */
+export interface VoceOrdine {
+  id: string;
+  nome: string;
+  prezzo: number;
+  quantita: number;
+  porzione: boolean;
 }
 
 export interface Partecipante {
@@ -60,6 +84,10 @@ export interface Prenotazione {
   cognome: string;
   email: string;
   quantita: number;
+  /** Ordine d'asporto dal menù (se l'evento ha il menù con prezzi). */
+  ordine?: VoceOrdine[];
+  /** Totale dell'ordine in centesimi. */
+  totale?: number;
   partecipanti: Partecipante[];
   consensi: { privacy: boolean; liberatoriaFoto: boolean | null };
   firma: string | null;

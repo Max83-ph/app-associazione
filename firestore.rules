@@ -75,8 +75,8 @@ service cloud.firestore {
     match /bookings/{code} {
       allow get: if true;
       allow list: if isStaff();
-      allow create: if nuovaPrenotazioneValida(code);
-      allow update: if aggiornamentoStaff() || annullamentoValido(code);
+      allow create: if nuovaPrenotazioneValida(code) || prenotazioneManuale();
+      allow update: if aggiornamentoStaff() || completamentoIngresso() || annullamentoValido(code);
       allow delete: if isOrg();
     }
 
@@ -124,6 +124,35 @@ service cloud.firestore {
             && evAfter.postiOccupati == ev.postiOccupati
             && (request.time < ev.inizioGiorno || evAfter.porzioniPrenotate <= ev.porzioniMaxGiornoEvento))
         );
+    }
+
+    // Iscrizione presa fuori dall'app, inserita da un organizzatore.
+    function prenotazioneManuale() {
+      let d = request.resource.data;
+      return isOrg() && d.manuale == true
+        && d.keys().hasOnly(['eventId', 'eventoTitolo', 'eventoData', 'modalita', 'nome', 'cognome',
+             'email', 'quantita', 'partecipanti', 'consensi', 'firma', 'statoBiglietto', 'checkInAt',
+             'createdAt', 'pagamento', 'manuale', 'daCompletare', 'telefono', 'note', 'inseritaDa'])
+        && testo(d.nome, 60) && testo(d.cognome, 60)
+        && d.email is string && d.email.size() <= 120
+        && d.quantita is int && d.quantita >= 1 && d.quantita <= 30
+        && d.partecipanti is list && d.partecipanti.size() <= 30
+        && d.firma == null && d.statoBiglietto == 'valido'
+        && exists(eventPath(d.eventId));
+    }
+
+    // All'ingresso lo staff completa dati, consensi e firma di un'iscrizione inserita a mano.
+    function completamentoIngresso() {
+      let d = request.resource.data;
+      return isStaff() && resource.data.get('manuale', false) == true
+        && d.diff(resource.data).affectedKeys().hasOnly(['nome', 'cognome', 'email', 'partecipanti', 'consensi',
+             'firma', 'daCompletare', 'completataAt', 'statoBiglietto', 'checkInAt', 'pagamento'])
+        && testo(d.nome, 60) && testo(d.cognome, 60)
+        && d.email is string && d.email.size() <= 120
+        && d.partecipanti is list && d.partecipanti.size() <= 30
+        && (d.firma == null || (d.firma is string && d.firma.size() <= 300000))
+        && resource.data.statoBiglietto in ['valido', 'usato']
+        && d.statoBiglietto in ['valido', 'usato'];
     }
 
     // Staff all'ingresso: check-in e pagamento in loco, nient'altro.

@@ -97,6 +97,14 @@ export interface Prenotazione {
   checkInAt: Timestamp | null;
   annullataAt?: Timestamp;
   createdAt: Timestamp;
+  /** Iscrizione presa fuori dall'app e inserita dall'organizzatore. */
+  manuale?: boolean;
+  /** Mancano dati o firme: si completano all'ingresso. */
+  daCompletare?: boolean;
+  telefono?: string;
+  note?: string;
+  inseritaDa?: string;
+  completataAt?: Timestamp;
   pagamento: {
     stato: StatoPagamento;
     importo: number | null;

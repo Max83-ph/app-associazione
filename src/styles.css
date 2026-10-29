@@ -628,3 +628,18 @@ input:focus, select:focus, textarea:focus { border-color: var(--verde); outline:
 .voce-spazio { flex: 1; }
 .voce-menu input[aria-invalid='true'] { border-color: var(--rosso); }
 .errore-testo { color: var(--rosso); }
+
+/* Iscritti inseriti a mano e ingresso per nome */
+.riga-bambino-manuale { display: flex; gap: 6px; align-items: center; }
+.riga-bambino-manuale input { flex: 1 1 0; min-width: 0; }
+.riga-bambino-manuale select { flex: 0 0 96px; }
+.cerca-iscritti { width: 100%; }
+.cerca-nome { display: flex; flex-direction: column; gap: 6px; }
+.cerca-nome input { min-height: 46px; border-radius: 10px; padding: 0 12px; background: var(--notte-2); color: var(--bianco); border: 1px solid var(--notte-3); font-size: 16px; }
+.cerca-nome input::placeholder { color: var(--notte-testo); }
+.risultati-nome { display: flex; flex-direction: column; gap: 6px; }
+.risultati-nome button.riga-ultima { border: 0; color: var(--bianco); text-align: left; width: 100%; min-height: 48px; cursor: pointer; }
+.completa-ingresso { background: var(--bianco); color: var(--inchiostro); border-radius: 14px; padding: 12px; gap: 10px; }
+.completa-ingresso h3 { margin: 0; font-size: 16px; }
+.nota-esito { font-size: 14px; opacity: 0.85; }
+.esito-chiudi { align-self: flex-end; color: inherit; }

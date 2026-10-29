@@ -17,9 +17,10 @@ import { daPagare, euro, totaleConMenu } from '../../lib/menu';
 import { dataBreve } from '../../lib/format';
 import { Icona } from '../../components/Icona';
 import type { Evento, Prenotazione } from '../../types';
+import { CompletaIscrizione } from './CompletaIscrizione';
 
 type Esito =
-  | { tipo: 'valido' | 'usato' | 'annullato' | 'altro-evento'; p: Prenotazione }
+  | { tipo: 'valido' | 'usato' | 'annullato' | 'altro-evento' | 'trovato'; p: Prenotazione }
   | { tipo: 'sconosciuto'; codice: string };
 
 export function Ingresso() {
@@ -29,6 +30,7 @@ export function Ingresso() {
   const [prenotazioni, setPrenotazioni] = useState<Prenotazione[]>([]);
   const [esito, setEsito] = useState<Esito | null>(null);
   const [manuale, setManuale] = useState('');
+  const [cerca, setCerca] = useState('');
   const [camera, setCamera] = useState(false);
   const [erroreCamera, setErroreCamera] = useState('');
   const ultimo = useRef<{ codice: string; t: number }>({ codice: '', t: 0 });
@@ -54,6 +56,8 @@ export function Ingresso() {
       if (!p) return setEsito({ tipo: 'sconosciuto', codice });
       if (p.eventId !== eventoId) return setEsito({ tipo: 'altro-evento', p });
       if (p.statoBiglietto !== 'valido') return setEsito({ tipo: p.statoBiglietto, p });
+      // Iscrizione inserita a mano con firme mancanti: prima si completa, poi entra.
+      if (p.daCompletare) return setEsito({ tipo: 'trovato', p });
       await registraIngresso(p.id);
       navigator.vibrate?.(120);
       setEsito({ tipo: 'valido', p });
@@ -69,6 +73,19 @@ export function Ingresso() {
     .sort((a, b) => b.checkInAt!.toMillis() - a.checkInAt!.toMillis())
     .slice(0, 5);
   const evento = eventi.find((e) => e.id === eventoId);
+  const filtro = cerca.trim().toLowerCase();
+  const trovati = filtro.length < 2 ? [] : prenotazioni
+    .filter((p) => p.statoBiglietto !== 'annullato')
+    .filter((p) => `${p.cognome} ${p.nome} ${p.nome} ${p.cognome} ${p.partecipanti.map((b) => `${b.nome} ${b.cognome}`).join(' ')}`.toLowerCase().includes(filtro))
+    .slice(0, 8);
+  const scegli = (p: Prenotazione) => {
+    setCerca('');
+    setEsito(p.statoBiglietto === 'usato' ? { tipo: 'usato', p } : { tipo: 'trovato', p });
+  };
+  // Il pannello mostra sempre i dati aggiornati (dopo pagamento, firme, ingresso).
+  const esitoVivo: Esito | null = esito && esito.tipo !== 'sconosciuto'
+    ? { ...esito, p: prenotazioni.find((x) => x.id === esito.p.id) ?? esito.p }
+    : esito;
 
   return (
     <div className="schermo-staff">
@@ -100,7 +117,23 @@ export function Ingresso() {
         <button type="submit" disabled={!manuale.trim() || !eventoId}>Verifica</button>
       </form>
 
-      {esito && <PannelloEsito esito={esito} evento={evento} />}
+      <div className="cerca-nome">
+        <label className="visivamente-nascosto" htmlFor="cerca-nome">Cerca per nome</label>
+        <input id="cerca-nome" value={cerca} onChange={(e) => setCerca(e.target.value)} placeholder="Oppure cerca per cognome o nome" autoComplete="off" disabled={!eventoId} />
+        {filtro.length >= 2 && (
+          <div className="risultati-nome">
+            {trovati.length === 0 && <div className="riga-ultima">Nessuno con questo nome</div>}
+            {trovati.map((p) => (
+              <button type="button" key={p.id} className="riga-ultima" onClick={() => scegli(p)}>
+                <span>{p.cognome} {p.nome}{p.partecipanti.length ? ` (${p.partecipanti.map((b) => b.nome).filter(Boolean).join(', ') || `${p.quantita} bambini`})` : `, ${p.quantita} pers.`}</span>
+                {p.statoBiglietto === 'usato' ? <span className="etichetta etichetta-neutro">Entrato</span> : p.daCompletare ? <span className="etichetta etichetta-caldo">Da completare</span> : null}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {esitoVivo && <PannelloEsito esito={esitoVivo} evento={evento} onChiudi={() => setEsito(null)} />}
 
       {ultimi.length > 0 && (
         <section className="ultime">
@@ -122,7 +155,7 @@ export function Ingresso() {
   );
 }
 
-function PannelloEsito({ esito, evento }: { esito: Esito; evento?: Evento }) {
+function PannelloEsito({ esito, evento, onChiudi }: { esito: Esito; evento?: Evento; onChiudi: () => void }) {
   if (esito.tipo === 'sconosciuto')
     return (
       <div className="esito esito-ko" role="status">
@@ -132,12 +165,13 @@ function PannelloEsito({ esito, evento }: { esito: Esito; evento?: Evento }) {
     );
   const { p } = esito;
   const quota = daPagare(p, evento);
-  const classe = esito.tipo === 'valido' ? 'esito esito-ok' : esito.tipo === 'usato' ? 'esito esito-attenzione' : 'esito esito-ko';
+  const classe = esito.tipo === 'valido' || (esito.tipo === 'trovato' && !p.daCompletare) ? 'esito esito-ok' : esito.tipo === 'trovato' ? 'esito esito-attenzione' : esito.tipo === 'usato' ? 'esito esito-attenzione' : 'esito esito-ko';
   const titolo = {
     valido: 'Valido',
     usato: 'Già usato',
     annullato: 'Annullato',
     'altro-evento': 'Altro evento',
+    trovato: p.daCompletare ? 'Da completare' : p.statoBiglietto === 'usato' ? 'Entrato' : 'Iscritto',
   }[esito.tipo];
   return (
     <div className={classe} role="status">
@@ -148,7 +182,8 @@ function PannelloEsito({ esito, evento }: { esito: Esito; evento?: Evento }) {
       <div className="esito-nome">{p.nome} {p.cognome}, {descriviModalita(p)}</div>
       {esito.tipo === 'altro-evento' && <div>È per “{p.eventoTitolo}”, non per {evento?.titolo ?? 'questo evento'}.</div>}
       {esito.tipo === 'usato' && p.checkInAt && <div>Entrato alle {p.checkInAt.toDate().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</div>}
-      {p.partecipanti.length > 0 && <div>{p.partecipanti.map((b) => `${b.nome} (${b.eta})`).join(', ')}</div>}
+      {p.partecipanti.some((b) => b.nome) && <div>{p.partecipanti.filter((b) => b.nome).map((b) => `${b.nome} (${b.eta})`).join(', ')}</div>}
+      {(p.telefono || p.note) && <div className="nota-esito">{[p.telefono, p.note].filter(Boolean).join(' · ')}</div>}
       {p.consensi.liberatoriaFoto === false && <div className="etichetta etichetta-giallo">Niente foto</div>}
       {!!p.ordine?.length && <OrdineEsito p={p} evento={evento} />}
       {!p.ordine?.length && quota && p.pagamento.stato === 'da_pagare' && esito.tipo !== 'annullato' && esito.tipo !== 'altro-evento' && (
@@ -156,7 +191,7 @@ function PannelloEsito({ esito, evento }: { esito: Esito; evento?: Evento }) {
           <div className="ordine-esito-totale"><span>Da incassare ({quota.dettaglio})</span><strong>{euro(quota.importo)}</strong></div>
         </div>
       )}
-      {(esito.tipo === 'valido' || esito.tipo === 'usato') && (
+      {(esito.tipo === 'valido' || esito.tipo === 'usato' || esito.tipo === 'trovato') && (
         p.pagamento.stato === 'da_pagare' ? (
           <button type="button" className="bottone scuro" onClick={() => segnaPagamento(p.id, true, quota?.importo)}>
             {quota ? `Incassati ${euro(quota.importo)}: segna pagato` : 'Da pagare in loco: segna pagato'}
@@ -165,6 +200,13 @@ function PannelloEsito({ esito, evento }: { esito: Esito; evento?: Evento }) {
           <div>Pagamento registrato{p.pagamento.importo ? ` (${euro(p.pagamento.importo)})` : ''}</div>
         )
       )}
+      {(esito.tipo === 'valido' || esito.tipo === 'usato' || esito.tipo === 'trovato') && p.daCompletare && (
+        <CompletaIscrizione key={p.id} p={p} evento={evento} onFatto={() => undefined} />
+      )}
+      {esito.tipo === 'trovato' && !p.daCompletare && p.statoBiglietto === 'valido' && (
+        <button type="button" className="bottone" onClick={() => { registraIngresso(p.id); navigator.vibrate?.(120); }}>Fai entrare</button>
+      )}
+      <button type="button" className="link-bottone esito-chiudi" onClick={onChiudi}>Chiudi</button>
     </div>
   );
 }

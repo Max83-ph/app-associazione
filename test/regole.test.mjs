@@ -227,3 +227,33 @@ test('asporto con ordine dal menù: righe e totale solo per l\'asporto', async (
   const { updateDoc } = await import('firebase/firestore');
   await assertSucceeds(updateDoc(doc(db('staff1'), 'bookings/MENUOK123456'), { 'pagamento.stato': 'pagato_in_loco', 'pagamento.metodo': 'in_loco', 'pagamento.importo': 1700 }));
 });
+
+test('iscritti inseriti a mano: li crea l\'organizzatore, lo staff completa firme all\'ingresso', async () => {
+  const data = Timestamp.fromMillis(Date.now() + 3 * 86400000);
+  await env.withSecurityRulesDisabled(async (c) => {
+    await setDoc(doc(c.firestore(), 'events/evLab'), {
+      titolo: 'Laboratorio', data, tipo: 'laboratorio', pubblico: 'bambini', stato: 'aperto', visibile: true,
+      postiMax: 20, postiOccupati: 0, asportoAttivo: false, porzioniPrenotate: 0, documentiRichiesti: { privacy: true, liberatoriaFoto: true },
+    });
+    await setDoc(doc(c.firestore(), 'users/staff2'), { ruolo: 'staff', email: 's2@x.it', nome: 'S' });
+  });
+  const manuale = {
+    eventId: 'evLab', eventoTitolo: 'Laboratorio', eventoData: data, modalita: 'partecipazione', nome: 'Luca', cognome: 'Verdi',
+    email: '', telefono: '333', note: '', quantita: 2, partecipanti: [{ nome: '', cognome: 'Verdi', eta: 6 }, { nome: '', cognome: 'Verdi', eta: 8 }],
+    consensi: { privacy: false, liberatoriaFoto: null }, firma: null, statoBiglietto: 'valido', checkInAt: null, createdAt: serverTimestamp(),
+    pagamento: { stato: 'da_pagare', importo: null, metodo: null, riferimentoTransazione: null }, manuale: true, daCompletare: true, inseritaDa: 'o@x.it',
+  };
+  await assertFails(setDoc(doc(db(null), 'bookings/MANUALE00001'), manuale));
+  await assertFails(setDoc(doc(db('staff2'), 'bookings/MANUALE00001'), manuale));
+  await assertSucceeds(setDoc(doc(db('org'), 'bookings/MANUALE00001'), manuale));
+  const { updateDoc } = await import('firebase/firestore');
+  const ref = doc(db('staff2'), 'bookings/MANUALE00001');
+  await assertFails(updateDoc(ref, { quantita: 5 }));
+  await assertSucceeds(updateDoc(ref, {
+    partecipanti: [{ nome: 'Anna', cognome: 'Verdi', eta: 6 }, { nome: 'Bea', cognome: 'Verdi', eta: 8 }],
+    consensi: { privacy: true, liberatoriaFoto: true }, firma: FIRMA, daCompletare: false, completataAt: serverTimestamp(),
+    statoBiglietto: 'usato', checkInAt: serverTimestamp(),
+  }));
+  // Le prenotazioni fatte dall'app restano modificabili dallo staff solo per ingresso e pagamento.
+  await assertFails(updateDoc(doc(db('staff2'), 'bookings/MENUOK123456'), { firma: FIRMA }));
+});

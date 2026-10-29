@@ -148,6 +148,97 @@ export async function creaPrenotazione(eventId: string, p: NuovaPrenotazione): P
   return codice;
 }
 
+export interface IscrittoManuale {
+  modalita: Modalita;
+  nome: string;
+  cognome: string;
+  email: string;
+  telefono: string;
+  note: string;
+  quantita: number;
+  partecipanti: Partecipante[];
+  /** Informativa (ed eventuale liberatoria) già firmate su carta: niente da completare all'ingresso. */
+  cartaceo: boolean;
+  liberatoriaFoto: boolean | null;
+  pagato: boolean;
+  importo: number | null;
+}
+
+/** Iscrizione presa fuori dall'app: la inserisce l'organizzatore, anche oltre i posti. */
+export async function aggiungiIscrittoManuale(eventId: string, d: IscrittoManuale, autore: string): Promise<string> {
+  const codice = nuovoCodice();
+  const refEvento = doc(eventi, eventId);
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(refEvento);
+    if (!snap.exists()) throw new ErrorePrenotazione('Evento non trovato.');
+    const ev = conId<Evento>(snap.id, snap.data());
+    tx.set(doc(prenotazioni, codice), {
+      eventId,
+      eventoTitolo: ev.titolo,
+      eventoData: ev.data,
+      modalita: d.modalita,
+      nome: d.nome.trim(),
+      cognome: d.cognome.trim(),
+      email: d.email.trim().toLowerCase(),
+      telefono: d.telefono.trim(),
+      note: d.note.trim(),
+      quantita: d.quantita,
+      partecipanti: d.partecipanti,
+      consensi: { privacy: d.cartaceo, liberatoriaFoto: d.cartaceo ? d.liberatoriaFoto : null },
+      firma: null,
+      statoBiglietto: 'valido',
+      checkInAt: null,
+      createdAt: serverTimestamp(),
+      pagamento: d.pagato
+        ? { stato: 'pagato_in_loco', importo: d.importo, metodo: 'in_loco', riferimentoTransazione: null }
+        : { stato: 'da_pagare', importo: null, metodo: null, riferimentoTransazione: null },
+      manuale: true,
+      daCompletare: !d.cartaceo,
+      inseritaDa: autore,
+    });
+    tx.update(refEvento, d.modalita === 'asporto'
+      ? { porzioniPrenotate: ev.porzioniPrenotate + d.quantita }
+      : { postiOccupati: ev.postiOccupati + d.quantita });
+  });
+  return codice;
+}
+
+/** Toglie un'iscrizione inserita a mano e restituisce i posti. */
+export async function eliminaIscrittoManuale(codice: string): Promise<void> {
+  await runTransaction(db, async (tx) => {
+    const ps = await tx.get(doc(prenotazioni, codice));
+    if (!ps.exists()) return;
+    const p = conId<Prenotazione>(ps.id, ps.data());
+    const refEvento = doc(eventi, p.eventId);
+    const es = await tx.get(refEvento);
+    if (es.exists() && p.statoBiglietto !== 'annullato') {
+      const ev = conId<Evento>(es.id, es.data());
+      tx.update(refEvento, p.modalita === 'asporto'
+        ? { porzioniPrenotate: Math.max(0, ev.porzioniPrenotate - p.quantita) }
+        : { postiOccupati: Math.max(0, ev.postiOccupati - p.quantita) });
+    }
+    tx.delete(doc(prenotazioni, codice));
+  });
+}
+
+/** All'ingresso: dati mancanti, presa visione, liberatoria e firma di un'iscrizione inserita a mano. */
+export async function completaIscrizione(
+  codice: string,
+  d: { nome: string; cognome: string; email: string; partecipanti: Partecipante[]; liberatoriaFoto: boolean | null; firma: string | null; entra: boolean },
+) {
+  await updateDoc(doc(prenotazioni, codice), {
+    nome: d.nome.trim(),
+    cognome: d.cognome.trim(),
+    email: d.email.trim().toLowerCase(),
+    partecipanti: d.partecipanti,
+    consensi: { privacy: true, liberatoriaFoto: d.liberatoriaFoto },
+    firma: d.firma,
+    daCompletare: false,
+    completataAt: serverTimestamp(),
+    ...(d.entra ? { statoBiglietto: 'usato', checkInAt: serverTimestamp() } : {}),
+  });
+}
+
 export async function leggiPrenotazione(codice: string): Promise<Prenotazione | null> {
   const snap = await getDoc(doc(prenotazioni, codice));
   return snap.exists() ? conId<Prenotazione>(snap.id, snap.data()) : null;

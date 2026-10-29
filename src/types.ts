@@ -32,6 +32,8 @@ export interface Evento {
   /** Altre foto dell'evento (pubbliche). */
   galleria?: RifFile[];
   prezzo: string;
+  /** Quota da pagare in loco per ogni persona/bambino, in centesimi: l'ingresso mostra quanto incassare. */
+  quotaPersona?: number | null;
   stato: StatoEvento;
   visibile: boolean;
   postiMax: number;

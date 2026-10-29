@@ -5,7 +5,7 @@ import { codiceLeggibile } from './codice';
 import { avvisoArrivo, dataBreve, dove } from './format';
 import { NOME_ASSOCIAZIONE } from '../config';
 import { testiCorrenti, testoSemplice } from './testi';
-import { euro, righeOrdine } from './menu';
+import { daPagare, euro, righeOrdine } from './menu';
 
 /** Il QR contiene solo il codice del biglietto, nessun dato personale. */
 export const qrDataUrl = (codice: string, width = 480) =>
@@ -61,7 +61,9 @@ export async function scaricaPdfBiglietto(p: Prenotazione, ev?: Evento | null) {
     ...(p.ordine?.length ? righeOrdine(p.ordine).map((r) => `• ${r}`) : []),
     p.ordine?.length
       ? `Totale ${p.pagamento.stato === 'da_pagare' ? 'da pagare al ritiro' : 'pagato'}: ${euro(p.totale ?? 0)}`
-      : `Pagamento: ${p.pagamento.stato === 'da_pagare' ? 'in loco' : 'effettuato'}`,
+      : daPagare(p, ev) && p.pagamento.stato === 'da_pagare'
+        ? `Da pagare all'ingresso: ${euro(daPagare(p, ev)!.importo)} (${daPagare(p, ev)!.dettaglio})`
+        : `Pagamento: ${p.pagamento.stato === 'da_pagare' ? 'in loco' : 'effettuato'}`,
   ];
   // Le righe stanno tra y=146 e y=176: con un ordine lungo il carattere si rimpicciolisce.
   pdf.setFontSize(Math.max(6.5, Math.min(11, 30 / (righe.length * 0.406))));

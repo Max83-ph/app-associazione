@@ -6,6 +6,7 @@ import { perInputDataOra } from '../../lib/format';
 import { Icona } from '../../components/Icona';
 import { useTesti } from '../../lib/testi';
 import { EditorMenu } from './EditorMenu';
+import { centesimi } from '../../lib/menu';
 import { ModificaAllegati } from '../../components/File';
 import { EditorTesto } from '../../components/TestoRicco';
 import { eliminaFiles, type RifFile } from '../../lib/file';
@@ -30,6 +31,7 @@ interface Bozza {
   locandina: string | null;
   galleria: RifFile[];
   prezzo: string;
+  quota: string;
   stato: StatoEvento;
   postiMax: number;
   asportoAttivo: boolean;
@@ -54,6 +56,7 @@ const vuota: Bozza = {
   locandina: null,
   galleria: [],
   prezzo: '',
+  quota: '',
   stato: 'bozza',
   postiMax: 60,
   asportoAttivo: true,
@@ -79,6 +82,7 @@ function daEvento(ev: Evento): Bozza {
     locandina: ev.locandina,
     galleria: ev.galleria ?? [],
     prezzo: ev.prezzo,
+    quota: typeof ev.quotaPersona === 'number' ? (ev.quotaPersona / 100).toFixed(2).replace('.', ',') : '',
     stato: ev.stato,
     postiMax: ev.postiMax,
     asportoAttivo: ev.asportoAttivo,
@@ -127,6 +131,7 @@ export function EventoForm() {
     e.preventDefault();
     setErrore('');
     if (!b.titolo.trim() || !b.data) return setErrore('Titolo e data sono obbligatori.');
+    if (b.quota.trim() && centesimi(b.quota) === null) return setErrore('Quota all\'ingresso non valida: scrivi ad esempio 5 oppure 7,50.');
     if (originale && b.postiMax < originale.postiOccupati)
       return setErrore(`Ci sono già ${originale.postiOccupati} posti prenotati: il massimo non può essere più basso.`);
     const data = new Date(b.data);
@@ -147,6 +152,7 @@ export function EventoForm() {
       locandina: b.locandina,
       galleria: b.galleria,
       prezzo: b.prezzo.trim(),
+      quotaPersona: b.quota.trim() ? centesimi(b.quota) : null,
       stato: b.stato,
       postiMax: b.postiMax,
       asportoAttivo: b.tipo === 'pasto' && b.asportoAttivo,
@@ -209,7 +215,15 @@ export function EventoForm() {
               <input type="number" min={0} max={180} step={5} value={b.anticipoMinuti} onChange={(e) => set('anticipoMinuti', Number(e.target.value))} />
               <span className="nota">Compare sulla pagina dell'evento e sul biglietto. 0 = nessun avviso.</span>
             </label>
-            <label>Prezzo (facoltativo)<input value={b.prezzo} onChange={(e) => set('prezzo', e.target.value)} placeholder="es. 15 € adulti, 8 € bambini" maxLength={60} /></label>
+            <label>Prezzo (facoltativo)<input value={b.prezzo} onChange={(e) => set('prezzo', e.target.value)} placeholder="es. 15 € adulti, 8 € bambini" maxLength={60} />
+              <span className="nota">Testo libero, compare sulla pagina dell'evento.</span>
+            </label>
+            {(
+              <label>Quota da pagare all'ingresso, € a {b.tipo === 'pasto' ? 'persona' : b.pubblico === 'adulti' ? 'persona' : 'bambino'} (facoltativa)
+                <input value={b.quota} onChange={(e) => set('quota', e.target.value)} inputMode="decimal" placeholder="es. 5" aria-invalid={!!b.quota.trim() && centesimi(b.quota) === null} />
+                <span className="nota">Quando scansioni il biglietto vedi subito quanto incassare (quota × persone) e lo segni pagato con un tocco. Vuoto = nessun importo da mostrare.</span>
+              </label>
+            )}
             <label>Chiusura iscrizioni (facoltativa)<input type="datetime-local" value={b.chiusura} onChange={(e) => set('chiusura', e.target.value)} />
               <span className="nota">Se vuota, le iscrizioni restano aperte fino all'inizio dell'evento.</span>
             </label>

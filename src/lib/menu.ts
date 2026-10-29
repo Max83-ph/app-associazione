@@ -14,6 +14,26 @@ export function centesimi(testo: string): number | null {
   return Math.round(Number(t) * 100);
 }
 
+/** Quota a persona: quella impostata, oppure ricavata da un prezzo semplice come "5 €" o "€ 7,50 a bambino". */
+export function quotaUnitaria(ev: Pick<Evento, 'quotaPersona' | 'prezzo'> | null | undefined): number | null {
+  if (!ev) return null;
+  if (typeof ev.quotaPersona === 'number') return ev.quotaPersona > 0 ? ev.quotaPersona : null;
+  const m = /^\s*(?:€\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:€|euro)?(\D*)$/i.exec(ev.prezzo ?? '');
+  if (!m || (!/€|euro/i.test(ev.prezzo))) return null;
+  const c = centesimi(m[1]);
+  return c && c > 0 ? c : null;
+}
+
+/** Quanto deve pagare questa prenotazione: totale dell'ordine d'asporto, oppure quota × persone. */
+export function daPagare(p: Pick<Prenotazione, 'ordine' | 'totale' | 'quantita' | 'modalita'>, ev: Pick<Evento, 'quotaPersona' | 'prezzo'> | null | undefined):
+  { importo: number; dettaglio: string } | null {
+  if (p.ordine?.length) return { importo: p.totale ?? 0, dettaglio: 'ordine d\'asporto' };
+  if (p.modalita === 'asporto') return null;
+  const q = quotaUnitaria(ev);
+  if (!q) return null;
+  return { importo: q * p.quantita, dettaglio: `${p.quantita} × ${euro(q)}` };
+}
+
 export const haMenuAsporto = (ev: Pick<Evento, 'menuAsporto'>) => (ev.menuAsporto ?? []).some((v) => v.disponibile !== false);
 
 /** Voci del menù raggruppate per categoria, nell'ordine delle categorie. */

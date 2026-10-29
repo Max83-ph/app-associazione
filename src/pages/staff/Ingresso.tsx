@@ -13,7 +13,7 @@ import {
 } from '../../lib/dati';
 import { codiceLeggibile, normalizzaCodice } from '../../lib/codice';
 import { descriviModalita } from '../../lib/biglietto';
-import { euro, totaleConMenu } from '../../lib/menu';
+import { daPagare, euro, totaleConMenu } from '../../lib/menu';
 import { dataBreve } from '../../lib/format';
 import { Icona } from '../../components/Icona';
 import type { Evento, Prenotazione } from '../../types';
@@ -131,6 +131,7 @@ function PannelloEsito({ esito, evento }: { esito: Esito; evento?: Evento }) {
       </div>
     );
   const { p } = esito;
+  const quota = daPagare(p, evento);
   const classe = esito.tipo === 'valido' ? 'esito esito-ok' : esito.tipo === 'usato' ? 'esito esito-attenzione' : 'esito esito-ko';
   const titolo = {
     valido: 'Valido',
@@ -150,10 +151,15 @@ function PannelloEsito({ esito, evento }: { esito: Esito; evento?: Evento }) {
       {p.partecipanti.length > 0 && <div>{p.partecipanti.map((b) => `${b.nome} (${b.eta})`).join(', ')}</div>}
       {p.consensi.liberatoriaFoto === false && <div className="etichetta etichetta-giallo">Niente foto</div>}
       {!!p.ordine?.length && <OrdineEsito p={p} evento={evento} />}
+      {!p.ordine?.length && quota && p.pagamento.stato === 'da_pagare' && esito.tipo !== 'annullato' && esito.tipo !== 'altro-evento' && (
+        <div className="ordine-esito">
+          <div className="ordine-esito-totale"><span>Da incassare ({quota.dettaglio})</span><strong>{euro(quota.importo)}</strong></div>
+        </div>
+      )}
       {(esito.tipo === 'valido' || esito.tipo === 'usato') && (
         p.pagamento.stato === 'da_pagare' ? (
-          <button type="button" className="bottone scuro" onClick={() => segnaPagamento(p.id, true, p.ordine?.length ? p.totale ?? 0 : undefined)}>
-            {p.ordine?.length ? `Incassati ${euro(p.totale ?? 0)}: segna pagato` : 'Da pagare in loco: segna pagato'}
+          <button type="button" className="bottone scuro" onClick={() => segnaPagamento(p.id, true, quota?.importo)}>
+            {quota ? `Incassati ${euro(quota.importo)}: segna pagato` : 'Da pagare in loco: segna pagato'}
           </button>
         ) : (
           <div>Pagamento registrato{p.pagamento.importo ? ` (${euro(p.pagamento.importo)})` : ''}</div>

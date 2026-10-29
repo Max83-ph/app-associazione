@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { annullaPrenotazione, ascoltaEvento, ascoltaPrenotazione, ErrorePrenotazione } from '../lib/dati';
 import { descriviModalita, qrDataUrl, scaricaPdfBiglietto } from '../lib/biglietto';
-import { euro } from '../lib/menu';
+import { daPagare, euro } from '../lib/menu';
 import { codiceLeggibile, normalizzaCodice } from '../lib/codice';
 import { avvisoArrivo, dataBreve, dove } from '../lib/format';
 import { useTesti } from '../lib/testi';
@@ -102,7 +102,7 @@ export function Biglietto() {
         <dl className="dettagli">
           <div><dt>Nome</dt><dd>{p.nome} {p.cognome}</dd></div>
           <div><dt>Prenotazione</dt><dd>{descriviModalita(p)}</dd></div>
-          <div><dt>Pagamento</dt><dd>{p.ordine?.length ? `${euro(p.totale ?? 0)} ${p.pagamento.stato === 'da_pagare' ? 'da pagare al ritiro' : 'pagato'}` : p.pagamento.stato === 'da_pagare' ? 'In loco' : 'Effettuato'}</dd></div>
+          <div><dt>Pagamento</dt><dd>{(() => { const d = daPagare(p, ev); const pagato = p.pagamento.stato !== 'da_pagare'; if (p.ordine?.length) return `${euro(p.totale ?? 0)} ${pagato ? 'pagato' : 'da pagare al ritiro'}`; if (d) return pagato ? `Effettuato (${euro(d.importo)})` : `${euro(d.importo)} da pagare all'ingresso (${d.dettaglio})`; return pagato ? 'Effettuato' : 'In loco'; })()}</dd></div>
           {p.consensi.liberatoriaFoto !== null && (
             <div><dt>Foto e video</dt><dd>{p.consensi.liberatoriaFoto ? 'Consentiti' : 'Non consentiti'}</dd></div>
           )}

@@ -5,7 +5,7 @@ import { dataBreve } from '../../lib/format';
 import { codiceLeggibile } from '../../lib/codice';
 import { descriviModalita, qrLinkDataUrl, scaricaPdfFirmato } from '../../lib/biglietto';
 import { Icona } from '../../components/Icona';
-import { euro, righeOrdine, riepilogoCucina } from '../../lib/menu';
+import { daPagare, euro, righeOrdine, riepilogoCucina } from '../../lib/menu';
 import type { Evento, Prenotazione } from '../../types';
 
 export function Iscritti() {
@@ -28,6 +28,9 @@ export function Iscritti() {
   const cucina = useMemo(() => riepilogoCucina(attive), [attive]);
   const conOrdine = attive.filter((p) => p.ordine?.length);
   const incassoPrevisto = conOrdine.reduce((s, p) => s + (p.totale ?? 0), 0);
+  const importi = attive.map((p) => ({ p, d: daPagare(p, ev) })).filter((x) => x.d && !x.p.ordine?.length);
+  const quotePreviste = importi.reduce((s, x) => s + x.d!.importo, 0);
+  const quoteIncassate = importi.filter((x) => x.p.pagamento.stato !== 'da_pagare').reduce((s, x) => s + x.d!.importo, 0);
   const incassato = conOrdine.filter((p) => p.pagamento.stato !== 'da_pagare').reduce((s, p) => s + (p.totale ?? 0), 0);
 
   const esportaCsv = () => {
@@ -79,6 +82,9 @@ export function Iscritti() {
             <p className="nota">Già incassati {euro(incassato)}, da incassare {euro(incassoPrevisto - incassato)}. Gli ordini annullati non sono contati.</p>
           </details>
         )}
+        {importi.length > 0 && (
+          <p className="nota">Quote all'ingresso: previste {euro(quotePreviste)}, già incassate {euro(quoteIncassate)}, da incassare {euro(quotePreviste - quoteIncassate)}.</p>
+        )}
         <div className="riga-azioni">
           <button type="button" className="bottone contorno piccolo" onClick={esportaCsv} disabled={!lista?.length}>Esporta CSV</button>
           {qr && <a className="bottone contorno piccolo" href={qr} download={`qr-evento-${id}.png`}>QR per la locandina</a>}
@@ -104,7 +110,7 @@ export function Iscritti() {
               </div>
               {p.statoBiglietto !== 'annullato' && (
                 <div className="iscritto-azioni">
-                  <label className="spunta"><input type="checkbox" checked={p.pagamento.stato !== 'da_pagare'} onChange={(e) => segnaPagamento(p.id, e.target.checked, p.ordine?.length ? p.totale ?? 0 : undefined)} /> Pagato</label>
+                  <label className="spunta"><input type="checkbox" checked={p.pagamento.stato !== 'da_pagare'} onChange={(e) => segnaPagamento(p.id, e.target.checked, daPagare(p, ev)?.importo)} /> Pagato{daPagare(p, ev) ? ` ${euro(daPagare(p, ev)!.importo)}` : ''}</label>
                   <label className="spunta"><input type="checkbox" checked={p.statoBiglietto === 'usato'} onChange={(e) => (e.target.checked ? registraIngresso(p.id) : annullaIngresso(p.id))} /> Entrato</label>
                   {p.firma && <button type="button" className="link-bottone" onClick={() => scaricaPdfFirmato(p)}>PDF firmato</button>}
                 </div>

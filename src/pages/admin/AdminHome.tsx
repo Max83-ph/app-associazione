@@ -103,7 +103,7 @@ export function AdminHome() {
               <Link to={`/admin/eventi/${prossimo.id}/iscritti`} className="cruscotto-voce">
                 <span className="cruscotto-etichetta">Prossimo evento</span>
                 <strong>{prossimo.titolo}</strong>
-                <span>{dataBreve(prossimo.data)}</span>
+                <span>{dataBreve(prossimo.data)} · {prossimo.postiOccupati}/{prossimo.postiMax} posti</span>
               </Link>
             )}
             {daApprovare > 0 && (

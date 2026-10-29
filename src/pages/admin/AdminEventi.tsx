@@ -37,6 +37,9 @@ export function AdminEventi() {
                   {dataBreve(ev.data)}</div>
                 <div className="riga-admin-sotto">{etichettaTipo[ev.tipo]}, <span className={`stato stato-${ev.stato}`}>{{ bozza: 'bozza', aperto: 'iscrizioni aperte', chiuso: 'iscrizioni chiuse' }[ev.stato]}</span>
                 </div>
+                <div className="riga-admin-sotto">
+                  {ev.postiOccupati}/{ev.postiMax} posti{ev.tipo === 'pasto' && ev.asportoAttivo ? `, ${ev.porzioniPrenotate} asporto` : ''}
+                </div>
               </div>
               <div className="riga-admin-azioni">
                 <Link to={`/admin/eventi/${ev.id}/iscritti`} className="mini">Iscritti</Link>

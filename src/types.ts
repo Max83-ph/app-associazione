@@ -234,7 +234,7 @@ export interface ImpostazioniCarnevale {
   quotaBambino: number;
   /** Anticipo a persona alla prova, in centesimi. */
   anticipo: number;
-  /** Sotto questa età (in anni compiuti) si paga la quota bambino. */
+  /** Non più usato: la quota bambino dipende dalla taglia. */
   etaBambino: number;
   slotMinuti: number;
   postiSlot: number;
@@ -250,6 +250,7 @@ export interface FiguranteCarnevale {
   dataNascita: string;
   luogoNascita: string;
   codiceFiscale: string;
+  /** Taglia "Bimbo": quota bambino. Si decide alla prova. */
   bambino: boolean;
   /** Taglia segnata alla prova. */
   taglia?: string;

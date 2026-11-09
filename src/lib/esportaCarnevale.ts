@@ -120,10 +120,10 @@ export async function excelCarnevale(lista: IscrizioneCarnevale[]) {
     const ref = i.persone[0];
     i.persone.forEach((p, k) => ws.addRow({
       cognome: p.cognome, nome: p.nome, nascita: dataIt(p.dataNascita), eta: etaAl(p.dataNascita), luogo: p.luogoNascita,
-      cf: p.codiceFiscale, quota: p.bambino ? 'Bambino' : 'Adulto', taglia: p.taglia ?? '',
+      cf: p.codiceFiscale, quota: p.taglia ? (p.bambino ? 'Bimbo' : 'Adulto') : '', taglia: p.taglia ?? '',
       ref: `${ref.nome} ${ref.cognome}`, cell: i.referente.cellulare, email: i.referente.email, indirizzo: i.referente.indirizzo,
       prova: descriviProva(i), provato: i.provato ? 'Sì' : 'No', consegnato: i.consegnato ? 'Sì' : 'No',
-      totale: k === 0 ? n(i.totale) : '', pagato: k === 0 ? n(i.pagato) : '', resto: k === 0 ? n(Math.max(0, i.totale - i.pagato)) : '',
+      totale: k === 0 && i.totale ? n(i.totale) : '', pagato: k === 0 ? n(i.pagato) : '', resto: k === 0 && i.totale ? n(Math.max(0, i.totale - i.pagato)) : '',
       foto: i.consensi.liberatoriaFoto === null ? '?' : i.consensi.liberatoriaFoto ? 'Sì' : 'No', firma: i.firma ? 'Sì' : 'No',
       codice: codiceLeggibile(i.id), note: i.note ?? '',
     }));

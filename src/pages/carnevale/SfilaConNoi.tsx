@@ -9,7 +9,7 @@ import { useTesti } from '../../lib/testi';
 import { erroreCF, normalizzaCF } from '../../lib/codiceFiscale';
 import { euro } from '../../lib/menu';
 import {
-  ascoltaGiornate, ascoltaImpostazioniCarnevale, creaIscrizioneCarnevale, ErroreCarnevale, etaAl, IMPOSTAZIONI_PREDEFINITE, isBambino, quoteIscrizione,
+  ascoltaGiornate, ascoltaImpostazioniCarnevale, creaIscrizioneCarnevale, ErroreCarnevale, etaAl, IMPOSTAZIONI_PREDEFINITE,
 } from '../../lib/carnevale';
 import type { FiguranteCarnevale, GiornataProve, ImpostazioniCarnevale } from '../../types';
 
@@ -65,13 +65,13 @@ export function SfilaConNoi() {
   if ((conRefer || modifica === 0) && eta < 18) problemiBozza.push('un referente maggiorenne (il genitore si iscrive per primo)');
 
   const salvaBozza = () => {
-    const p = { ...bozza, codiceFiscale: normalizzaCF(bozza.codiceFiscale), bambino: isBambino(bozza.dataNascita, i) };
+    const p = { ...bozza, codiceFiscale: normalizzaCF(bozza.codiceFiscale), bambino: false };
     setPersone((l) => (modifica === null ? [...l, p] : l.map((x, k) => (k === modifica ? p : x))));
     setBozza({ ...VUOTA, cognome: persone[0]?.cognome ?? bozza.cognome });
     setModifica(null);
   };
 
-  const q = quoteIscrizione(persone, i);
+  const anticipo = persone.length * i.anticipo;
   const minori = persone.some((p) => etaAl(p.dataNascita) < 18);
   const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(referente.email.trim());
   const problemi2: string[] = [];
@@ -95,7 +95,7 @@ export function SfilaConNoi() {
         firma,
         prova,
         manuale: manuale ? { note, autore: utente?.email ?? '' } : undefined,
-      }, i);
+      });
       navigate(manuale ? `/admin/carnevale?aggiunto=${codice}` : `/carnevale/b/${codice}?nuovo=1`);
     } catch (e) {
       setErrore(e instanceof ErroreCarnevale ? e.message : 'Iscrizione non riuscita. Controlla la connessione e riprova.');
@@ -122,7 +122,7 @@ export function SfilaConNoi() {
                     {k === 0 ? 'Referente' : etaAl(p.dataNascita) < 18 ? `Minorenne · ${etaAl(p.dataNascita)} anni` : 'Adulto'}
                   </span>
                 </div>
-                <span className="nota">{p.codiceFiscale} · quota {p.bambino ? 'bambino' : 'adulto'}</span>
+                <span className="nota">{p.codiceFiscale}</span>
                 <div className="riga-azioni">
                   <button type="button" className="link-bottone" onClick={() => { setBozza(p); setModifica(k); }}>Modifica</button>
                   {(k > 0 || persone.length === 1) && <button type="button" className="link-bottone" onClick={() => setPersone((l) => l.filter((_, x) => x !== k))}>Togli</button>}
@@ -147,7 +147,7 @@ export function SfilaConNoi() {
               </fieldset>
             )}
             {persone.length > 0 && (
-              <p className="nota">Quota costume: {q.numAdulti} adult{q.numAdulti === 1 ? 'o' : 'i'} × {euro(i.quotaAdulto)}{q.numBambini ? ` + ${q.numBambini} bambin${q.numBambini === 1 ? 'o' : 'i'} × ${euro(i.quotaBambino)}` : ''} = <strong>{euro(q.totale)}</strong>.</p>
+              <p className="nota">Quota costume {euro(i.quotaAdulto)} a persona, {euro(i.quotaBambino)} per le taglie bimbo: la taglia si decide alla prova.</p>
             )}
             <button type="button" className="bottone" disabled={persone.length === 0 || modifica !== null} onClick={() => setPasso(2)}>
               Avanti{persone.length ? `: ${persone.length} ${persone.length === 1 ? 'persona' : 'persone'}` : ''}
@@ -199,9 +199,9 @@ export function SfilaConNoi() {
             </p>
             <SceltaProva giornate={giornate} persone={persone.length} valore={prova} onChange={setProva} ignoraLimite={manuale} />
             <div className="riepilogo-quota">
-              <div><span>Quota costume</span><strong>{euro(q.totale)}</strong></div>
-              {i.anticipo > 0 && <div><span>Alla prova: anticipo ({persone.length} × {euro(i.anticipo)})</span><strong>{euro(Math.min(q.totale, q.anticipo))}</strong></div>}
-              <p className="nota">Il saldo si paga alla consegna del costume. Puoi anche pagare tutto subito alla prova.</p>
+              <div><span>Quota costume a persona</span><strong>{euro(i.quotaAdulto)} · taglie bimbo {euro(i.quotaBambino)}</strong></div>
+              {i.anticipo > 0 && <div><span>Alla prova: anticipo ({persone.length} × {euro(i.anticipo)})</span><strong>{euro(anticipo)}</strong></div>}
+              <p className="nota">Il totale si calcola alla prova, in base alle taglie. Il saldo si paga alla consegna del costume; puoi anche pagare tutto subito alla prova.</p>
             </div>
             {errore && <p className="avviso errore">{errore}</p>}
             <div className="riga-azioni">

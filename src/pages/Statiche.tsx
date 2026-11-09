@@ -68,7 +68,7 @@ export function Carnevale() {
             <h2>Sfila con noi</h2>
             {imp.sfilate && <p>{imp.sfilate}</p>}
             <p className="sfila-quota">
-              Quota costume {euro(imp.quotaAdulto)} adulti, {euro(imp.quotaBambino)} bambini (fino a {imp.etaBambino - 1} anni).
+              Quota costume {euro(imp.quotaAdulto)}, {euro(imp.quotaBambino)} per le taglie bimbo (la taglia si prova all'appuntamento).
               {imp.anticipo > 0 && ` Anticipo ${euro(imp.anticipo)} a persona alla prova, saldo alla consegna; puoi anche pagare tutto subito.`}
             </p>
             <Link to="/carnevale/iscriviti" className="bottone">Sfila con noi</Link>

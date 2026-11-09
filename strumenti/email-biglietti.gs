@@ -78,8 +78,10 @@ function emailCarnevale(codice, motivo, props) {
   const data = i.prova && i.prova.data ? new Date(i.prova.data) : null;
   const quando = data ? giornoLungo(data) + ', ore ' + Utilities.formatDate(data, FUSO, 'HH:mm') : '';
   const dove = String(imp.luogoProve || contatti.indirizzo || '').trim();
-  const resto = Math.max(0, Number(i.totale || 0) - Number(i.pagato || 0));
-  const anticipo = Math.min(resto, i.persone.length * Number(imp.anticipo || 0));
+  const definita = Number(i.totale || 0) > 0;
+  const resto = definita ? Math.max(0, Number(i.totale) - Number(i.pagato || 0)) : null;
+  const anticipo = i.persone.length * Number(imp.anticipo || 0);
+  const quotaTesto = definita ? euro(i.totale) : 'si calcola alla prova in base alla taglia (' + euro(imp.quotaAdulto) + ' a persona, ' + euro(imp.quotaBambino) + ' taglie bimbo)';
   const titolo = { nuova: 'Iscrizione confermata', prova: 'Prova costume cambiata', dati: 'Dati aggiornati' }[motivo] || 'La tua iscrizione';
   const nomi = i.persone.map(function (p) { return p.nome + ' ' + p.cognome; });
 
@@ -89,8 +91,8 @@ function emailCarnevale(codice, motivo, props) {
     '',
     'Iscritti: ' + nomi.join(', '),
     quando ? 'Prova costume: ' + quando + (dove ? ' – ' + dove : '') : 'Prova costume: non ancora prenotata (puoi farlo dal link qui sotto).',
-    'Quota costume: ' + euro(i.totale) + (i.pagato ? ' (pagato ' + euro(i.pagato) + ')' : ''),
-    resto > 0 && !i.pagato && anticipo ? 'Alla prova: anticipo ' + euro(anticipo) + ' (oppure tutto ' + euro(resto) + '), saldo alla consegna.' : '',
+    'Quota costume: ' + quotaTesto + (i.pagato ? ' (pagato ' + euro(i.pagato) + ')' : ''),
+    !i.pagato && anticipo ? 'Alla prova: anticipo ' + euro(anticipo) + ' (oppure tutto), saldo alla consegna.' : '',
     'Codice: ' + leggibile,
     '',
     'La tua pagina con il QR (per la prova e la consegna), dove puoi anche cambiare orario o correggere i dati: ' + link,
@@ -108,9 +110,9 @@ function emailCarnevale(codice, motivo, props) {
     (quando
       ? '<p style="margin:0 0 4px;font-size:13px;color:#56625b">PROVA COSTUME</p><p style="margin:0 0 4px;color:#1e6b45;font-weight:bold;font-size:17px">' + esc(quando) + '</p>' + (dove ? '<p style="margin:0 0 12px">' + esc(dove) + '</p>' : '')
       : '<p style="margin:0 0 12px;padding:10px 12px;background:#fcf1cc;color:#6a5000;border-radius:8px">Prova costume non ancora prenotata: puoi sceglierla dalla tua pagina.</p>') +
-    '<p style="margin:12px 0;padding:10px 12px;background:#fcf1cc;color:#6a5000;border-radius:8px">Quota costume <strong>' + euro(i.totale) + '</strong>' +
+    '<p style="margin:12px 0;padding:10px 12px;background:#fcf1cc;color:#6a5000;border-radius:8px">Quota costume: <strong>' + esc(quotaTesto) + '</strong>' +
     (i.pagato ? ', già pagati ' + euro(i.pagato) : '') +
-    (resto > 0 && !i.pagato && anticipo ? '. Alla prova: anticipo <strong>' + euro(anticipo) + '</strong> (oppure tutto ' + euro(resto) + '), saldo alla consegna.' : '.') + '</p>' +
+    (!i.pagato && anticipo ? '. Alla prova: anticipo <strong>' + euro(anticipo) + '</strong> (oppure tutto' + (resto ? ' ' + euro(resto) : '') + '), saldo alla consegna.' : '.') + '</p>' +
     '<p style="margin:0 0 16px;color:#56625b">Codice: <strong style="font-size:18px;letter-spacing:1px;color:#1a1f2b">' + leggibile + '</strong></p>' +
     '<p style="margin:0 0 16px"><a href="' + link + '" style="display:inline-block;background:#1e6b45;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:bold">Apri la tua pagina con il QR</a></p>' +
     '<p style="margin:0;font-size:13px;color:#56625b">Mostra il QR alla prova e alla consegna del costume. Dalla stessa pagina puoi cambiare orario e correggere i dati.</p>' +

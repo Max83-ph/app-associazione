@@ -299,7 +299,7 @@ service cloud.firestore {
       allow write: if isOrg() && id == 'carnevale'
         && request.resource.data.aperte is bool
         && request.resource.data.quotaAdulto is int && request.resource.data.quotaBambino is int
-        && request.resource.data.anticipo is int && request.resource.data.etaBambino is int
+        && request.resource.data.anticipo is int
         && request.resource.data.slotMinuti is int && request.resource.data.slotMinuti >= 5
         && request.resource.data.postiSlot is int && request.resource.data.postiSlot >= 1;
     }
@@ -472,8 +472,8 @@ service cloud.firestore {
              'stato', 'createdAt', 'totale', 'pagato', 'movimenti', 'provato', 'consegnato'])
         && d.persone is list && d.persone.size() >= 1 && d.persone.size() <= 12
         && d.cfs is list && d.cfs.size() == d.persone.size()
-        && d.numAdulti is int && d.numBambini is int && d.numAdulti >= 1 && d.numAdulti + d.numBambini == d.persone.size()
-        && d.totale == d.numAdulti * imp.quotaAdulto + d.numBambini * imp.quotaBambino
+        && d.numAdulti is int && d.numBambini is int && d.numAdulti + d.numBambini == d.persone.size()
+        && d.totale == 0
         && d.referente.keys().hasOnly(['indirizzo', 'cellulare', 'email'])
         && testo(d.referente.indirizzo, 160) && testo(d.referente.cellulare, 30) && testo(d.referente.email, 120)
         && d.consensi.keys().hasOnly(['privacy', 'liberatoriaFoto'])
@@ -506,12 +506,9 @@ service cloud.firestore {
     function modificaDatiCarnevale() {
       let d = request.resource.data;
       let prima = resource.data;
-      let imp = impCarnevale();
       return prima.stato == 'valido'
-        && d.diff(prima).affectedKeys().hasOnly(['persone', 'cfs', 'numAdulti', 'numBambini', 'totale', 'referente', 'consensi', 'modificataAt'])
+        && d.diff(prima).affectedKeys().hasOnly(['persone', 'cfs', 'referente', 'consensi', 'modificataAt'])
         && d.persone.size() == prima.persone.size() && d.cfs.size() == d.persone.size()
-        && d.numAdulti is int && d.numBambini is int && d.numAdulti >= 1 && d.numAdulti + d.numBambini == d.persone.size()
-        && d.totale == d.numAdulti * imp.quotaAdulto + d.numBambini * imp.quotaBambino
         && d.referente.keys().hasOnly(['indirizzo', 'cellulare', 'email'])
         && testo(d.referente.indirizzo, 160) && testo(d.referente.cellulare, 30) && testo(d.referente.email, 120)
         && (d.consensi == prima.consensi || (d.consensi.keys().hasOnly(['privacy', 'liberatoriaFoto']) && d.consensi.privacy == true && d.consensi.liberatoriaFoto is bool && prima.consensi.privacy == true))
@@ -522,7 +519,7 @@ service cloud.firestore {
     function aggiornamentoStaffCarnevale() {
       let d = request.resource.data;
       return isStaff()
-        && d.diff(resource.data).affectedKeys().hasOnly(['persone', 'provato', 'provatoAt', 'pagato', 'movimenti',
+        && d.diff(resource.data).affectedKeys().hasOnly(['persone', 'numAdulti', 'numBambini', 'totale', 'provato', 'provatoAt', 'pagato', 'movimenti',
              'consegnato', 'consegnatoAt', 'consensi', 'firma', 'daCompletare', 'completataAt', 'note'])
         && d.persone.size() == resource.data.persone.size()
         && d.pagato is int && d.pagato >= 0

@@ -278,7 +278,7 @@ test('carnevale: iscrizione con prova, posti dello slot, doppioni e staff', asyn
       referente: { indirizzo: 'Via X 1', cellulare: '3400000000', email: 'a@b.it' },
       consensi: { privacy: true, liberatoriaFoto: true }, firma: FIRMA,
       prova: prova ? { giornata: 'g1', ora, data: ora === '15:40' ? Timestamp.now() : Timestamp.now() } : null,
-      stato: 'valido', createdAt: serverTimestamp(), totale: totale ?? na * 5000 + nb * 3000, pagato: 0, movimenti: [], provato: false, consegnato: false, ...extra,
+      stato: 'valido', createdAt: serverTimestamp(), totale: totale ?? 0, pagato: 0, movimenti: [], provato: false, consegnato: false, ...extra,
     });
     for (const p of persone) b.set(doc(d, `cfCarnevale/${p.codiceFiscale}`), { codice: code });
     return b.commit();
@@ -287,7 +287,7 @@ test('carnevale: iscrizione con prova, posti dello slot, doppioni e staff', asyn
   await assertSucceeds(iscrivi('CARNAAAAAAA2', [persona('RSSAAA80A01L750A'), persona('RSSBBB18A01L750B', true)]));
   // Slot ormai pieno (5/5): rifiutata.
   await assertFails(iscrivi('CARNBBBBBBB2', [persona('RSSCCC80A01L750C')], { occupati: 5 }));
-  // Totale sbagliato: rifiutata.
+  // Totale impostato da chi si iscrive (si decide alla prova): rifiutata.
   await assertFails(iscrivi('CARNCCCCCCC2', [persona('RSSDDD80A01L750D')], { prova: false, totale: 100 }));
   // Codice fiscale già iscritto: rifiutata.
   await assertFails(iscrivi('CARNDDDDDDD2', [persona('RSSAAA80A01L750A')], { prova: false }));
@@ -316,7 +316,7 @@ test('carnevale: iscrizione con prova, posti dello slot, doppioni e staff', asyn
   // Correzione dei dati dal link: stessa persona, quota ricalcolata, nuovo codice fiscale.
   const b5 = writeBatch(d);
   b5.update(doc(d, 'iscrizioniCarnevale/CARNEEEEEEE2'), {
-    persone: [persona('RSSGGG80A01L750G')], cfs: ['RSSGGG80A01L750G'], numAdulti: 1, numBambini: 0, totale: 5000,
+    persone: [persona('RSSGGG80A01L750G')], cfs: ['RSSGGG80A01L750G'],
     referente: { indirizzo: 'Via Y 2', cellulare: '3401111111', email: 'nuova@b.it' }, modificataAt: serverTimestamp(),
   });
   b5.set(doc(d, 'cfCarnevale/RSSGGG80A01L750G'), { codice: 'CARNEEEEEEE2' });
@@ -328,8 +328,8 @@ test('carnevale: iscrizione con prova, posti dello slot, doppioni e staff', asyn
   await assertFails(getDocs(collection(db(null), 'iscrizioniCarnevale')));
   await assertSucceeds(getDocs(collection(db('staffc'), 'iscrizioniCarnevale')));
   const { updateDoc } = await import('firebase/firestore');
-  await assertSucceeds(updateDoc(doc(db('staffc'), 'iscrizioniCarnevale/CARNAAAAAAA2'), { pagato: 4000, movimenti: [{ tipo: 'anticipo', importo: 4000, at: Timestamp.now(), da: 'sc@x.it' }], provato: true }));
-  await assertFails(updateDoc(doc(db('staffc'), 'iscrizioniCarnevale/CARNAAAAAAA2'), { totale: 0 }));
+  await assertSucceeds(updateDoc(doc(db('staffc'), 'iscrizioniCarnevale/CARNAAAAAAA2'), { pagato: 4000, movimenti: [{ tipo: 'anticipo', importo: 4000, at: Timestamp.now(), da: 'sc@x.it' }], provato: true, totale: 8000, numAdulti: 1, numBambini: 1 }));
+  await assertFails(updateDoc(doc(db('staffc'), 'iscrizioniCarnevale/CARNAAAAAAA2'), { referente: { indirizzo: 'x', cellulare: 'y', email: 'z' } }));
   // Iscrizioni chiuse: rifiutata.
   await env.withSecurityRulesDisabled(async (c) => updateDoc(doc(c.firestore(), 'contenuti/carnevale'), { aperte: false }));
   await assertFails(iscrivi('CARNFFFFFFF2', [persona('RSSFFF80A01L750F')], { prova: false }));

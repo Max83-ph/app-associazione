@@ -6,7 +6,7 @@ import { euro } from '../../lib/menu';
 import { useTesti } from '../../lib/testi';
 import {
   annullaUltimoPagamento, ascoltaGiornate, ascoltaImpostazioniCarnevale, ascoltaIscrizioniCarnevale, completaFirmaCarnevale,
-  daIncassare, etaAl, IMPOSTAZIONI_PREDEFINITE, registraPagamento, registraProva, segnaConsegna, TAGLIE,
+  daIncassare, etaAl, IMPOSTAZIONI_PREDEFINITE, quoteIscrizione, registraPagamento, registraProva, segnaConsegna, TAGLIE, tagliaBambino,
 } from '../../lib/carnevale';
 import { Firma } from '../../components/Firma';
 import { Testo } from '../../components/TestoRicco';
@@ -127,6 +127,10 @@ function PannelloCarnevale({ i, imp, g, onChiudi }: { i: IscrizioneCarnevale; im
   const [liberatoria, setLiberatoria] = useState<boolean | null>(null);
   const [firma, setFirma] = useState<string | null>(null);
   const d = daIncassare(i, imp);
+  // Anteprima della quota con le taglie scelte (prima di salvarle).
+  const tutteTaglie = taglie.every(Boolean);
+  const anteprima = quoteIscrizione(taglie.map((t) => ({ bambino: tagliaBambino(t) })), imp);
+  const taglieCambiate = taglie.some((t, k) => t !== (i.persone[k].taglia ?? ''));
   const altraGiornata = i.prova && g && i.prova.giornata !== g.id;
   const esegui = async (f: () => Promise<void>) => {
     setLavoro(true);
@@ -149,7 +153,7 @@ function PannelloCarnevale({ i, imp, g, onChiudi }: { i: IscrizioneCarnevale; im
           <div key={p.codiceFiscale} className="riga-taglia">
             <div className="riga-taglia-nome">
               <strong>{p.nome} {p.cognome}</strong>
-              <span className="nota">{etaAl(p.dataNascita)} anni · quota {p.bambino ? 'bambino' : 'adulto'}</span>
+              <span className="nota">{etaAl(p.dataNascita)} anni{taglie[k] ? ` · quota ${tagliaBambino(taglie[k]) ? `bimbo ${euro(imp.quotaBambino)}` : euro(imp.quotaAdulto)}` : ''}</span>
             </div>
             <label>Taglia
               <select value={taglie[k]} onChange={(e) => setTaglie((t) => t.map((x, j) => (j === k ? e.target.value : x)))}>
@@ -159,30 +163,34 @@ function PannelloCarnevale({ i, imp, g, onChiudi }: { i: IscrizioneCarnevale; im
             </label>
           </div>
         ))}
-        <button type="button" className="bottone" disabled={lavoro} onClick={() => esegui(() => registraProva(i.id, taglie, i.persone))}>
-          {i.provato ? 'Aggiorna taglie' : 'Salva taglie e segna provato'}
+        <button type="button" className="bottone" disabled={lavoro || !taglie.some(Boolean)} onClick={() => esegui(() => registraProva(i.id, taglie, i.persone, imp))}>
+          {i.provato ? 'Aggiorna taglie' : tutteTaglie ? `Salva taglie e segna provato · quota ${euro(anteprima.totale)}` : 'Salva le taglie scelte'}
         </button>
+        {!tutteTaglie && <span className="nota">La quota si calcola quando tutti hanno la taglia.</span>}
         {i.provato && <span className="nota">Prova registrata{i.provatoAt ? ` alle ${i.provatoAt.toDate().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}` : ''}.</span>}
       </div>
 
       <div className="ordine-esito">
         <ul>
-          <li><span>Quota costume</span><span>{euro(i.totale)}</span></li>
+          <li><span>Quota costume</span><span>{d.resto === null ? 'da definire (taglie)' : euro(i.totale)}</span></li>
           <li><span>Già pagato</span><span>{euro(i.pagato)}</span></li>
         </ul>
-        <div className="ordine-esito-totale"><span>Da incassare</span><strong>{euro(d.resto)}</strong></div>
+        <div className="ordine-esito-totale"><span>Da incassare</span><strong>{d.resto === null ? (d.anticipo ? `anticipo ${euro(d.anticipo)}` : '—') : euro(d.resto)}</strong></div>
+        {taglieCambiate && <span className="nota">Salva le taglie per aggiornare la quota.</span>}
       </div>
-      {d.resto > 0 && (
+      {(d.resto === null ? d.anticipo > 0 : d.resto > 0) && (
         <div className="griglia-2">
           {d.anticipo > 0 && (
             <button type="button" className="bottone scuro" disabled={lavoro} onClick={() => esegui(() => registraPagamento(i, 'anticipo', d.anticipo, utente?.email ?? ''))}>
               Anticipo {euro(d.anticipo)}
             </button>
           )}
-          <button type="button" className={d.anticipo > 0 ? 'bottone contorno' : 'bottone scuro'} disabled={lavoro}
-            onClick={() => esegui(() => registraPagamento(i, i.pagato > 0 ? 'saldo' : 'tutto', d.resto, utente?.email ?? ''))}>
-            {i.pagato > 0 ? `Saldo ${euro(d.resto)}` : `Tutto ${euro(d.resto)}`}
-          </button>
+          {d.resto !== null && d.resto > 0 && (
+            <button type="button" className={d.anticipo > 0 ? 'bottone contorno' : 'bottone scuro'} disabled={lavoro || taglieCambiate}
+              onClick={() => esegui(() => registraPagamento(i, i.pagato > 0 ? 'saldo' : 'tutto', d.resto!, utente?.email ?? ''))}>
+              {i.pagato > 0 ? `Saldo ${euro(d.resto)}` : `Tutto ${euro(d.resto)}`}
+            </button>
+          )}
         </div>
       )}
       {(i.movimenti?.length ?? 0) > 0 && (

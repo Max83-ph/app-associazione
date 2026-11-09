@@ -171,6 +171,7 @@ function Iscritti({ lista, giornate, evidenzia }: { lista: IscrizioneCarnevale[]
               {!i.prova && <span className="etichetta etichetta-giallo">No prova</span>}
               {i.provato && <span className="etichetta etichetta-neutro">Provato</span>}
               {i.pagato >= i.totale && i.totale > 0 && <span className="etichetta etichetta-neutro">Pagato</span>}
+              {i.pagato > 0 && i.pagato < i.totale && <span className="etichetta etichetta-neutro">Anticipo</span>}
             </span>
           </button>
           {aperta === i.id && <DettaglioIscrizione i={i} giornate={giornate} />}
@@ -194,12 +195,12 @@ function DettaglioIscrizione({ i, giornate }: { i: IscrizioneCarnevale; giornate
     <div className="dettaglio-carnevale">
       <ul>
         {i.persone.map((p) => (
-          <li key={p.codiceFiscale}>{p.nome} {p.cognome} · {p.dataNascita.split('-').reverse().join('/')} ({etaAl(p.dataNascita)}) · {p.luogoNascita} · {p.codiceFiscale} · {p.bambino ? 'bambino' : 'adulto'}{p.taglia ? ` · taglia ${p.taglia}` : ''}</li>
+          <li key={p.codiceFiscale}>{p.nome} {p.cognome} · {p.dataNascita.split('-').reverse().join('/')} ({etaAl(p.dataNascita)}) · {p.luogoNascita} · {p.codiceFiscale}{p.taglia ? ` · taglia ${p.taglia} (${p.bambino ? 'quota bimbo' : 'quota adulto'})` : ''}</li>
         ))}
       </ul>
       <p className="nota">{i.referente.indirizzo} · {i.referente.cellulare}{i.referente.email ? ` · ${i.referente.email}` : ''}</p>
       <p className="nota">
-        Prova: {i.prova ? descriviProva(i) : 'non prenotata'} · Quota {euro(i.totale)}, pagato {euro(i.pagato)} · Foto: {i.consensi.liberatoriaFoto === null ? '?' : i.consensi.liberatoriaFoto ? 'sì' : 'no'}
+        Prova: {i.prova ? descriviProva(i) : 'non prenotata'} · Quota {i.totale ? euro(i.totale) : 'da definire alla prova'}, pagato {euro(i.pagato)} · Foto: {i.consensi.liberatoriaFoto === null ? '?' : i.consensi.liberatoriaFoto ? 'sì' : 'no'}
         {i.consegnato ? ' · costume consegnato' : ''} · {i.manuale ? `inserita a mano${i.inseritaDa ? ` da ${i.inseritaDa}` : ''}` : 'dall\'app'}
       </p>
       <label>Note<input value={note} maxLength={200} onChange={(e) => setNote(e.target.value)} onBlur={() => note !== (i.note ?? '') && salvaNoteCarnevale(i.id, note)} /></label>
@@ -223,13 +224,15 @@ function DettaglioIscrizione({ i, giornate }: { i: IscrizioneCarnevale; giornate
 function Pagamenti({ lista }: { lista: IscrizioneCarnevale[] }) {
   const dovuto = lista.reduce((s, i) => s + i.totale, 0);
   const incassato = lista.reduce((s, i) => s + i.pagato, 0);
-  const daIncassare = lista.filter((i) => i.pagato < i.totale);
+  const daIncassare = lista.filter((i) => i.totale > 0 && i.pagato < i.totale);
+  const daDefinire = lista.filter((i) => !i.persone.every((p) => p.taglia));
   return (
     <section className="modulo">
       <div className="riepilogo-quota">
-        <div><span>Quote totali</span><strong>{euro(dovuto)}</strong></div>
+        <div><span>Quote definite (taglie provate)</span><strong>{euro(dovuto)}</strong></div>
+        {daDefinire.length > 0 && <div><span>Quota da definire alla prova</span><strong>{daDefinire.length} {daDefinire.length === 1 ? 'iscrizione' : 'iscrizioni'}</strong></div>}
         <div><span>Incassato</span><strong>{euro(incassato)}</strong></div>
-        <div><span>Da incassare</span><strong>{euro(dovuto - incassato)}</strong></div>
+        <div><span>Da incassare (quote definite)</span><strong>{euro(Math.max(0, dovuto - incassato))}</strong></div>
       </div>
       <h2 className="titolo-sezione">Chi deve ancora pagare</h2>
       {daIncassare.length === 0 && <p className="vuoto">Nessuno.</p>}
@@ -257,7 +260,7 @@ function Impostazioni({ imp }: { imp: ImpostazioniCarnevale }) {
   const qa = centesimi(b.qa || '0');
   const qb = centesimi(b.qb || '0');
   const an = centesimi(b.an || '0');
-  const ok = qa !== null && qb !== null && an !== null && b.slotMinuti >= 5 && b.postiSlot >= 1 && b.etaBambino >= 1;
+  const ok = qa !== null && qb !== null && an !== null && b.slotMinuti >= 5 && b.postiSlot >= 1;
   const salva = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ok) return;
@@ -276,13 +279,10 @@ function Impostazioni({ imp }: { imp: ImpostazioniCarnevale }) {
         <legend>Quote costume</legend>
         <div className="griglia-3">
           <label>Adulto €<input value={b.qa} inputMode="decimal" onChange={(e) => set({ qa: e.target.value })} aria-invalid={qa === null} /></label>
-          <label>Bambino €<input value={b.qb} inputMode="decimal" onChange={(e) => set({ qb: e.target.value })} aria-invalid={qb === null} /></label>
+          <label>Taglie bimbo €<input value={b.qb} inputMode="decimal" onChange={(e) => set({ qb: e.target.value })} aria-invalid={qb === null} /></label>
           <label>Anticipo a persona €<input value={b.an} inputMode="decimal" onChange={(e) => set({ an: e.target.value })} aria-invalid={an === null} /></label>
         </div>
-        <label>Quota bambino sotto i … anni
-          <input type="number" min={1} max={18} value={b.etaBambino} onChange={(e) => set({ etaBambino: Number(e.target.value) })} />
-          <span className="nota">Es. 14: fino a 13 anni compiuti si paga la quota bambino. Vale per le nuove iscrizioni.</span>
-        </label>
+        <span className="nota">La quota bambino vale per le taglie "Bimbo", segnate alla prova: il totale di ogni famiglia si calcola lì.</span>
       </fieldset>
       <fieldset>
         <legend>Prove costume</legend>

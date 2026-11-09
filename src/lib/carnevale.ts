@@ -11,7 +11,7 @@ export const IMPOSTAZIONI_PREDEFINITE: ImpostazioniCarnevale = {
   quotaAdulto: 0,
   quotaBambino: 0,
   anticipo: 2000,
-  etaBambino: 14,
+  etaBambino: 0,
   slotMinuti: 10,
   postiSlot: 5,
   sfilate: 'Sabato 30 gennaio e domenica 7 febbraio 2027',
@@ -45,7 +45,10 @@ export function etaAl(dataNascita: string, al = new Date()): number {
   return eta;
 }
 export const minorenne = (dataNascita: string) => etaAl(dataNascita) < 18;
-export const isBambino = (dataNascita: string, imp: ImpostazioniCarnevale) => etaAl(dataNascita) < imp.etaBambino;
+/** La quota bambino dipende dalla taglia del costume, decisa alla prova: tutte le taglie "Bimbo". */
+export const tagliaBambino = (taglia?: string) => !!taglia && taglia.startsWith('Bimbo');
+/** Quota definita solo quando tutti hanno la taglia. */
+export const quotaDefinita = (i: Pick<IscrizioneCarnevale, 'persone'>) => i.persone.every((p) => !!p.taglia);
 
 export function quoteIscrizione(persone: Pick<FiguranteCarnevale, 'bambino'>[], imp: ImpostazioniCarnevale) {
   const numBambini = persone.filter((p) => p.bambino).length;
@@ -58,11 +61,14 @@ export function quoteIscrizione(persone: Pick<FiguranteCarnevale, 'bambino'>[], 
   };
 }
 
-/** Quanto incassare adesso: anticipo (se non è stato pagato niente), tutto, o il saldo che manca. */
+/** Quanto incassare adesso: anticipo (se non è stato pagato niente), tutto, o il saldo che manca.
+ *  Prima della prova la quota non è definita (dipende dalle taglie): resto = null. */
 export function daIncassare(i: Pick<IscrizioneCarnevale, 'totale' | 'pagato' | 'persone'>, imp: ImpostazioniCarnevale) {
-  const resto = Math.max(0, i.totale - i.pagato);
-  const anticipo = Math.min(resto, i.persone.length * imp.anticipo);
-  return { resto, anticipo: i.pagato === 0 ? anticipo : 0 };
+  const definita = quotaDefinita(i);
+  const resto = definita ? Math.max(0, i.totale - i.pagato) : null;
+  const anticipoPieno = i.persone.length * imp.anticipo;
+  const anticipo = i.pagato === 0 ? (resto === null ? anticipoPieno : Math.min(resto, anticipoPieno)) : 0;
+  return { resto, anticipo };
 }
 
 // ---------- Giornate e slot ----------
@@ -121,13 +127,13 @@ export interface NuovaIscrizioneCarnevale {
 }
 
 /** Crea l'iscrizione e, se c'è, occupa i posti dello slot scelto. Un codice fiscale già iscritto blocca tutto. */
-export async function creaIscrizioneCarnevale(n: NuovaIscrizioneCarnevale, imp: ImpostazioniCarnevale): Promise<string> {
+export async function creaIscrizioneCarnevale(n: NuovaIscrizioneCarnevale): Promise<string> {
   const codice = nuovoCodice();
   const persone = n.persone.map((p) => ({
     nome: p.nome.trim(), cognome: p.cognome.trim(), dataNascita: p.dataNascita, luogoNascita: p.luogoNascita.trim(),
-    codiceFiscale: normalizzaCF(p.codiceFiscale), bambino: isBambino(p.dataNascita, imp),
+    codiceFiscale: normalizzaCF(p.codiceFiscale), bambino: false,
   }));
-  const q = quoteIscrizione(persone, imp);
+  // La quota si calcola alla prova, quando si conoscono le taglie.
   const completa = !!n.firma;
   try {
     await runTransaction(db, async (tx) => {
@@ -144,15 +150,15 @@ export async function creaIscrizioneCarnevale(n: NuovaIscrizioneCarnevale, imp: 
       tx.set(doc(iscrizioni, codice), {
         persone,
         cfs: persone.map((p) => p.codiceFiscale),
-        numAdulti: q.numAdulti,
-        numBambini: q.numBambini,
+        numAdulti: persone.length,
+        numBambini: 0,
         referente: { indirizzo: n.referente.indirizzo.trim(), cellulare: n.referente.cellulare.trim(), email: n.referente.email.trim().toLowerCase() },
         consensi: { privacy: completa || !n.manuale, liberatoriaFoto: completa || !n.manuale ? n.liberatoriaFoto : null },
         firma: n.firma,
         prova,
         stato: 'valido',
         createdAt: serverTimestamp(),
-        totale: q.totale,
+        totale: 0,
         pagato: 0,
         movimenti: [],
         provato: false,
@@ -211,17 +217,15 @@ export async function modificaIscrizioneCarnevale(
   persone: FiguranteCarnevale[],
   referente: IscrizioneCarnevale['referente'],
   liberatoriaFoto: boolean | null,
-  imp: ImpostazioniCarnevale,
 ) {
   const nuove = persone.map((p, k) => ({
     ...i.persone[k], nome: p.nome.trim(), cognome: p.cognome.trim(), dataNascita: p.dataNascita, luogoNascita: p.luogoNascita.trim(),
-    codiceFiscale: normalizzaCF(p.codiceFiscale), bambino: isBambino(p.dataNascita, imp),
+    codiceFiscale: normalizzaCF(p.codiceFiscale),
   }));
-  const q = quoteIscrizione(nuove, imp);
   const cfs = nuove.map((p) => p.codiceFiscale);
   const batch = writeBatch(db);
   batch.update(doc(iscrizioni, i.id), {
-    persone: nuove, cfs, numAdulti: q.numAdulti, numBambini: q.numBambini, totale: q.totale,
+    persone: nuove, cfs,
     referente: { indirizzo: referente.indirizzo.trim(), cellulare: referente.cellulare.trim(), email: referente.email.trim().toLowerCase() },
     ...(i.consensi.privacy && liberatoriaFoto !== null ? { consensi: { privacy: true, liberatoriaFoto } } : {}),
     modificataAt: serverTimestamp(),
@@ -273,11 +277,20 @@ export async function eliminaIscrizioneCarnevale(codice: string) {
 
 // ---------- Alla prova (staff) ----------
 
-export async function registraProva(codice: string, taglie: string[], persone: FiguranteCarnevale[]) {
+/** Alla prova: taglie e, quando ci sono tutte, quota (adulto o bambino secondo la taglia). */
+export async function registraProva(codice: string, taglie: string[], persone: FiguranteCarnevale[], imp: ImpostazioniCarnevale) {
+  const nuove = persone.map((p, k) => {
+    const taglia = taglie[k] ?? p.taglia ?? '';
+    return { ...p, taglia, bambino: tagliaBambino(taglia) };
+  });
+  const q = quoteIscrizione(nuove, imp);
+  const tutte = nuove.every((p) => p.taglia);
   await updateDoc(doc(iscrizioni, codice), {
-    persone: persone.map((p, k) => ({ ...p, taglia: taglie[k] ?? p.taglia ?? '' })),
-    provato: true,
-    provatoAt: serverTimestamp(),
+    persone: nuove,
+    numAdulti: q.numAdulti,
+    numBambini: q.numBambini,
+    totale: tutte ? q.totale : 0,
+    ...(tutte ? { provato: true, provatoAt: serverTimestamp() } : {}),
   });
 }
 

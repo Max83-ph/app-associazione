@@ -48,7 +48,7 @@ export function BigliettoCarnevale() {
     );
 
   const luogo = imp?.luogoProve || contatti.indirizzo;
-  const d = imp ? daIncassare(i, imp) : { resto: 0, anticipo: 0 };
+  const d = imp ? daIncassare(i, imp) : { resto: null, anticipo: 0 };
   const prenota = async () => {
     if (!prova) return;
     setLavoro(true);
@@ -93,9 +93,10 @@ export function BigliettoCarnevale() {
           {i.persone.map((p) => <li key={p.codiceFiscale}>{p.nome} {p.cognome}{etaAl(p.dataNascita) < 18 ? `, ${etaAl(p.dataNascita)} anni` : ''}{p.taglia ? ` · taglia ${p.taglia}` : ''}</li>)}
         </ul>
         <dl className="dettagli">
-          <div><dt>Quota costume</dt><dd>{euro(i.totale)}</dd></div>
-          <div><dt>Pagato</dt><dd>{euro(i.pagato)}</dd></div>
-          {d.resto > 0 && <div><dt>{i.pagato === 0 && d.anticipo ? 'Alla prova' : 'Da pagare'}</dt><dd>{i.pagato === 0 && d.anticipo ? `anticipo ${euro(d.anticipo)} (o tutto ${euro(d.resto)})` : `${euro(d.resto)} alla consegna`}</dd></div>}
+          <div><dt>Quota costume</dt><dd>{d.resto === null ? `alla prova, in base alla taglia${imp ? ` (${euro(imp.quotaAdulto)} · bimbo ${euro(imp.quotaBambino)})` : ''}` : euro(i.totale)}</dd></div>
+          {i.pagato > 0 && <div><dt>Pagato</dt><dd>{euro(i.pagato)}</dd></div>}
+          {d.resto === null && d.anticipo > 0 && <div><dt>Alla prova</dt><dd>anticipo {euro(d.anticipo)} (o tutto)</dd></div>}
+          {d.resto !== null && d.resto > 0 && <div><dt>{i.pagato === 0 && d.anticipo ? 'Da pagare' : 'Saldo'}</dt><dd>{i.pagato === 0 && d.anticipo ? `anticipo ${euro(d.anticipo)} (o tutto ${euro(d.resto)})` : `${euro(d.resto)} alla consegna`}</dd></div>}
           <div><dt>Foto e video</dt><dd>{i.consensi.liberatoriaFoto === null ? 'Da firmare alla prova' : i.consensi.liberatoriaFoto ? 'Consentiti' : 'Non consentiti'}</dd></div>
         </dl>
       </section>
@@ -114,8 +115,8 @@ export function BigliettoCarnevale() {
           </div>
         </section>
       )}
-      {modifica && imp && (
-        <ModificaDati i={i} imp={imp} onFatto={(ok) => {
+      {modifica && (
+        <ModificaDati i={i} onFatto={(ok) => {
           setModifica(false);
           if (ok) { setEsito('Dati aggiornati.'); if (urlEmail && i.referente.email) inviaBigliettoEmail(i.id, urlEmail, 'carnevale', 'dati').then(setEmail); }
         }} />
@@ -160,7 +161,7 @@ function InvioAutomatico({ codice, url, indirizzo }: { codice: string; url: stri
 }
 
 /** Correzione dei dati: stesse persone (per aggiungerne o toglierne si scrive al gruppo). */
-function ModificaDati({ i, imp, onFatto }: { i: IscrizioneCarnevale; imp: ImpostazioniCarnevale; onFatto: (ok: boolean) => void }) {
+function ModificaDati({ i, onFatto }: { i: IscrizioneCarnevale; onFatto: (ok: boolean) => void }) {
   const [persone, setPersone] = useState<FiguranteCarnevale[]>(i.persone.map((p) => ({ ...p })));
   const [referente, setReferente] = useState({ ...i.referente });
   const [liberatoria, setLiberatoria] = useState<boolean | null>(i.consensi.liberatoriaFoto);
@@ -187,7 +188,7 @@ function ModificaDati({ i, imp, onFatto }: { i: IscrizioneCarnevale; imp: Impost
     setLavoro(true);
     setErrore('');
     try {
-      await modificaIscrizioneCarnevale(i, persone, referente, liberatoria, imp);
+      await modificaIscrizioneCarnevale(i, persone, referente, liberatoria);
       onFatto(true);
     } catch (e) {
       setErrore(e instanceof ErroreCarnevale ? e.message : 'Modifica non riuscita. Riprova.');
@@ -227,7 +228,6 @@ function ModificaDati({ i, imp, onFatto }: { i: IscrizioneCarnevale; imp: Impost
           </div>
         </fieldset>
       )}
-      <p className="nota">Se cambia l'età la quota si ricalcola: oggi {euro(i.totale)}.</p>
       {problemi.length > 0 && <p className="nota">Manca: {problemi.join(', ')}.</p>}
       {errore && <p className="avviso errore">{errore}</p>}
       <div className="riga-azioni">

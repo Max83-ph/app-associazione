@@ -643,3 +643,67 @@ input:focus, select:focus, textarea:focus { border-color: var(--verde); outline:
 .completa-ingresso h3 { margin: 0; font-size: 16px; }
 .nota-esito { font-size: 14px; opacity: 0.85; }
 .esito-chiudi { align-self: flex-end; color: inherit; }
+
+/* Carnevale: Sfila con noi */
+.passi-iscrizione { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-top: 10px; max-width: 320px; }
+.passi-iscrizione .passo { height: 4px; border-radius: 2px; background: var(--linea); }
+.passi-iscrizione .passo.fatto { background: var(--nastro); background: linear-gradient(to right, var(--giallo) 0 50%, var(--verde) 50% 100%); }
+.figurante { background: var(--bianco); border: 1px solid var(--linea); border-radius: var(--r); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.figurante-testa { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.figurante-nuovo { border: 2px solid var(--verde) !important; }
+.riepilogo-quota { background: var(--giallo-tenue); color: var(--giallo-testo); border-radius: var(--r); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.riepilogo-quota div { display: flex; justify-content: space-between; gap: 10px; }
+.riepilogo-quota strong { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.riepilogo-quota .nota { color: inherit; }
+.scelta-prova { display: flex; flex-direction: column; gap: 12px; }
+.giorni-prova { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.giorni-prova .scelta { flex: 0 0 auto; min-width: 104px; display: flex; flex-direction: column; align-items: center; gap: 0; line-height: 1.25; padding: 8px 10px; }
+.giorno-prova { font-weight: 650; text-transform: capitalize; }
+.slot-prova { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.slot { min-height: 52px; border-radius: 10px; border: 1px solid var(--bordo); background: var(--bianco); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; line-height: 1.2; }
+.slot strong { font-size: 16px; font-variant-numeric: tabular-nums; }
+.slot span { font-size: 12px; color: var(--grigio); }
+.slot:disabled { background: #eef0ec; border-color: var(--linea); opacity: 1; }
+.slot:disabled strong, .slot:disabled span { color: var(--grigio-chiaro); }
+.slot.attivo { background: var(--verde); border-color: var(--verde); color: var(--bianco); }
+.slot.attivo span { color: var(--bianco); }
+.sfila-box { background: var(--notte); color: var(--bianco); border-radius: var(--r-grande); padding: 20px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.sfila-box h2 { margin: 0; font-size: 30px; line-height: 1.05; font-stretch: 82%; font-variation-settings: 'wdth' 82; color: var(--bianco); }
+.sfila-box p { margin: 0; color: var(--notte-testo); }
+.sfila-box .sfila-quota { color: var(--giallo); }
+.sfila-box .nota { color: var(--notte-testo); }
+.sfila-box .bottone { background: var(--giallo); color: var(--notte); }
+.sfila-sopra { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--giallo); font-weight: 650; }
+.prenota-dopo { width: 100%; max-width: 440px; box-sizing: border-box; color: var(--inchiostro); }
+.cifre-carnevale { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.cifre-carnevale div { background: var(--bianco); border: 1px solid var(--linea); border-radius: var(--r); padding: 10px 12px; display: flex; flex-direction: column; }
+.cifre-carnevale strong { font-size: 24px; line-height: 1.1; }
+.cifre-carnevale span { font-size: 12.5px; color: var(--grigio); }
+.cifre-carnevale .attenzione { background: var(--giallo-tenue); border-color: var(--giallo-tenue); }
+.cifre-carnevale .attenzione span, .cifre-carnevale .attenzione strong { color: var(--giallo-testo); }
+.schede { display: flex; gap: 4px; border-bottom: 1px solid var(--linea); overflow-x: auto; }
+.schede .scheda { border: 0; background: none; padding: 10px 12px; min-height: 44px; font-weight: 600; color: var(--grigio); border-bottom: 2px solid transparent; white-space: nowrap; }
+.schede .scheda.attiva { color: var(--verde); border-bottom-color: var(--verde); }
+.giornata-admin, .giornata-nuova { background: var(--bianco); border: 1px solid var(--linea); border-radius: var(--r); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.giornata-nuova { border: 2px dashed var(--bordo); }
+.giornata-testa { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.giornata-testa strong { text-transform: capitalize; }
+.barra { height: 8px; border-radius: 4px; background: var(--linea); overflow: hidden; }
+.barra div { height: 100%; background: var(--verde); }
+.agenda { width: 100%; border-collapse: collapse; font-size: 14px; }
+.agenda td { padding: 5px 6px 5px 0; border-top: 1px solid var(--linea); vertical-align: top; }
+.agenda td:first-child { width: 52px; font-variant-numeric: tabular-nums; font-weight: 600; }
+.agenda td:last-child { text-align: right; }
+.agenda td:nth-child(2):last-child { text-align: left; }
+.iscritto-carnevale { background: var(--bianco); border: 1px solid var(--linea); border-radius: var(--r); overflow: hidden; }
+.iscritto-carnevale.evidenziato { border-color: var(--verde); box-shadow: 0 0 0 2px var(--verde-tenue); }
+.iscritto-carnevale-testa { width: 100%; border: 0; background: none; text-align: left; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 52px; }
+.iscritto-carnevale .etichette { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.dettaglio-carnevale { padding: 0 14px 12px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.dettaglio-carnevale ul { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 3px; }
+.dettaglio-carnevale p { margin: 0; }
+.scelta.piccola { min-height: 36px; padding: 4px 12px; font-size: 14px; }
+.riga-taglia { display: flex; align-items: flex-end; gap: 8px; }
+.riga-taglia-nome { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.riga-taglia label { font-size: 12px; flex: 0 0 120px; }
+.staff-piede a + a { margin-left: 12px; }

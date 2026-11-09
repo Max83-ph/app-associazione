@@ -1,3 +1,8 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ascoltaImpostazioniCarnevale } from '../lib/carnevale';
+import { euro } from '../lib/menu';
+import type { ImpostazioniCarnevale } from '../types';
 import { Intestazione } from '../components/Layout';
 import { useTesti } from '../lib/testi';
 import { Testo } from '../components/TestoRicco';
@@ -51,13 +56,28 @@ function Contatti() {
 
 export function Carnevale() {
   const p = usePagina('carnevale');
+  const [imp, setImp] = useState<ImpostazioniCarnevale | null>(null);
+  useEffect(() => ascoltaImpostazioniCarnevale(setImp), []);
   return (
     <>
       <Intestazione titolo="Carnevale" />
       <main className="contenuto testo-lungo">
+        {imp?.aperte && (
+          <section className="sfila-box">
+            <span className="sfila-sopra">Sfilate di Carnevale</span>
+            <h2>Sfila con noi</h2>
+            {imp.sfilate && <p>{imp.sfilate}</p>}
+            <p className="sfila-quota">
+              Quota costume {euro(imp.quotaAdulto)} adulti, {euro(imp.quotaBambino)} bambini (fino a {imp.etaBambino - 1} anni).
+              {imp.anticipo > 0 && ` Anticipo ${euro(imp.anticipo)} a persona alla prova, saldo alla consegna; puoi anche pagare tutto subito.`}
+            </p>
+            <Link to="/carnevale/iscriviti" className="bottone">Sfila con noi</Link>
+            <span className="nota">Iscrivi te e la tua famiglia, firma dal telefono e scegli quando venire a provare il costume.</span>
+          </section>
+        )}
         {p === undefined && <p className="vuoto">Caricamento…</p>}
         {p && <ContenutoPagina p={p} />}
-        {p === null && <div className="pannello">
+        {p === null && !imp?.aperte && <div className="pannello">
           <h2>In arrivo</h2>
           <p>
             Qui le famiglie potranno iscrivere i figuranti alla sfilata, firmare i documenti e prenotare la prova abito,

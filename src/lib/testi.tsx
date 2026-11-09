@@ -7,6 +7,8 @@ import {
   INFORMATIVA_SOCI,
   LIBERATORIA_FOTO,
   LIBERATORIA_SOCI,
+  INFORMATIVA_CARNEVALE,
+  LIBERATORIA_CARNEVALE,
   NOME_ASSOCIAZIONE,
   PRIVACY_SITO,
 } from '../config';
@@ -29,6 +31,8 @@ export interface Testi {
   liberatoriaSoci: string;
   /** Pagina "Privacy e cookie" dell'app. */
   privacySito: string;
+  informativaCarnevale: string;
+  liberatoriaCarnevale: string;
   contatti: Contatti;
 }
 
@@ -43,6 +47,8 @@ export const TESTI_PREDEFINITI: Testi = {
   informativaSoci: INFORMATIVA_SOCI,
   liberatoriaSoci: LIBERATORIA_SOCI,
   privacySito: PRIVACY_SITO,
+  informativaCarnevale: INFORMATIVA_CARNEVALE,
+  liberatoriaCarnevale: LIBERATORIA_CARNEVALE,
   contatti: { ...CONTATTI },
 };
 
@@ -59,6 +65,8 @@ function unisci(salvati: Partial<Testi> | undefined): Testi {
     informativaSoci: testo('informativaSoci'),
     liberatoriaSoci: testo('liberatoriaSoci'),
     privacySito: testo('privacySito'),
+    informativaCarnevale: testo('informativaCarnevale'),
+    liberatoriaCarnevale: testo('liberatoriaCarnevale'),
     contatti: { ...TESTI_PREDEFINITI.contatti, ...(s.contatti ?? {}) },
   };
 }

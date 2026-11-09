@@ -225,3 +225,79 @@ export interface FirmaDocumento {
   firma: string;
   firmatoIl: Timestamp;
 }
+
+// ---------- Carnevale: "Sfila con noi" ----------
+export interface ImpostazioniCarnevale {
+  aperte: boolean;
+  /** Quote costume in centesimi. */
+  quotaAdulto: number;
+  quotaBambino: number;
+  /** Anticipo a persona alla prova, in centesimi. */
+  anticipo: number;
+  /** Sotto questa età (in anni compiuti) si paga la quota bambino. */
+  etaBambino: number;
+  slotMinuti: number;
+  postiSlot: number;
+  /** Testo libero mostrato nella pagina (es. "Sabato 30 gennaio e domenica 7 febbraio"). */
+  sfilate: string;
+  luogoProve: string;
+}
+
+export interface FiguranteCarnevale {
+  nome: string;
+  cognome: string;
+  /** AAAA-MM-GG */
+  dataNascita: string;
+  luogoNascita: string;
+  codiceFiscale: string;
+  bambino: boolean;
+  /** Taglia segnata alla prova. */
+  taglia?: string;
+}
+
+export interface MovimentoCarnevale {
+  tipo: 'anticipo' | 'saldo' | 'tutto';
+  importo: number;
+  at: Timestamp;
+  da: string;
+}
+
+export interface IscrizioneCarnevale {
+  id: string;
+  persone: FiguranteCarnevale[];
+  cfs: string[];
+  numAdulti: number;
+  numBambini: number;
+  referente: { indirizzo: string; cellulare: string; email: string };
+  consensi: { privacy: boolean; liberatoriaFoto: boolean | null };
+  firma: string | null;
+  prova: { giornata: string; ora: string; data: Timestamp } | null;
+  stato: 'valido' | 'annullato';
+  createdAt: Timestamp;
+  totale: number;
+  pagato: number;
+  movimenti: MovimentoCarnevale[];
+  provato: boolean;
+  provatoAt?: Timestamp;
+  consegnato: boolean;
+  consegnatoAt?: Timestamp;
+  manuale?: boolean;
+  daCompletare?: boolean;
+  note?: string;
+  inseritaDa?: string;
+  completataAt?: Timestamp;
+}
+
+export interface GiornataProve {
+  id: string;
+  /** Inizio della prima prova. */
+  data: Timestamp;
+  /** AAAA-MM-GG */
+  giorno: string;
+  dalle: string;
+  alle: string;
+  slotMinuti: number;
+  postiSlot: number;
+  prenotati: Record<string, number>;
+  ultimaPrenotazione?: string;
+}

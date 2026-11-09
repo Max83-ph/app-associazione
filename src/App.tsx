@@ -32,6 +32,10 @@ const ImportaSoci = lazy(() => import('./pages/admin/ImportaSoci').then((m) => (
 const GestioneComunicazioni = lazy(() => import('./pages/admin/GestioneComunicazioni').then((m) => ({ default: m.GestioneComunicazioni })));
 const ModificaComunicazioni = lazy(() => import('./pages/admin/GestioneComunicazioni').then((m) => ({ default: m.ModificaComunicazioni })));
 const PuliziaDati = lazy(() => import('./pages/admin/PuliziaDati').then((m) => ({ default: m.PuliziaDati })));
+const SfilaConNoi = lazy(() => import('./pages/carnevale/SfilaConNoi').then((m) => ({ default: m.SfilaConNoi })));
+const BigliettoCarnevale = lazy(() => import('./pages/carnevale/BigliettoCarnevale').then((m) => ({ default: m.BigliettoCarnevale })));
+const AdminCarnevale = lazy(() => import('./pages/admin/AdminCarnevale').then((m) => ({ default: m.AdminCarnevale })));
+const ProveCarnevale = lazy(() => import('./pages/staff/ProveCarnevale').then((m) => ({ default: m.ProveCarnevale })));
 const Ingresso = lazy(() => import('./pages/staff/Ingresso').then((m) => ({ default: m.Ingresso })));
 function Protetta({ livello, children }: { livello: 'staff' | 'organizzatore'; children: ReactNode }) {
   const { caricamento, isStaff, isOrganizzatore } = useAuth();
@@ -51,6 +55,7 @@ export default function App() {
             <Route index element={<Home />} />
             <Route path="evento/:id" element={<EventoPagina />} />
             <Route path="carnevale" element={<Carnevale />} />
+            <Route path="carnevale/iscriviti" element={<SfilaConNoi />} />
             <Route path="soci" element={<AreaSoci />} />
             <Route path="soci/iscrizione" element={<Iscrizione />} />
             <Route path="info" element={<Info />} />
@@ -76,11 +81,14 @@ export default function App() {
             <Route path="admin/pagine/:id" element={<Protetta livello="organizzatore"><ModificaPagina /></Protetta>} />
             <Route path="admin/comunicazioni" element={<Protetta livello="organizzatore"><GestioneComunicazioni /></Protetta>} />
             <Route path="admin/comunicazioni/:codice" element={<Protetta livello="organizzatore"><ModificaComunicazioni /></Protetta>} />
+            <Route path="admin/carnevale" element={<Protetta livello="organizzatore"><AdminCarnevale /></Protetta>} />
             <Route path="admin/privacy" element={<Protetta livello="organizzatore"><PuliziaDati /></Protetta>} />
             <Route path="admin/archivio" element={<Protetta livello="organizzatore"><GestioneArchivio /></Protetta>} />
           </Route>
           <Route path="biglietto/:codice" element={<Biglietto />} />
+          <Route path="carnevale/b/:codice" element={<BigliettoCarnevale />} />
           <Route path="staff" element={<Protetta livello="staff"><Ingresso /></Protetta>} />
+          <Route path="staff/carnevale" element={<Protetta livello="staff"><ProveCarnevale /></Protetta>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>

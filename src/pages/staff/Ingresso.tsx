@@ -148,7 +148,8 @@ export function Ingresso() {
       )}
 
       <div className="staff-piede">
-        {isOrganizzatore && <Link to="/admin">Gestione</Link>}
+<Link to="/staff/carnevale">Prove costume</Link>
+                {isOrganizzatore && <Link to="/admin">Gestione</Link>}
         <button type="button" className="link-bottone chiaro" onClick={() => signOut(auth)}>Esci</button>
       </div>
     </div>
@@ -230,7 +231,7 @@ function OrdineEsito({ p, evento }: { p: Prenotazione; evento?: Evento }) {
   );
 }
 
-function Scanner({ onCodice, onErrore }: { onCodice: (c: string) => void; onErrore: (m: string) => void }) {
+export function Scanner({ onCodice, onErrore }: { onCodice: (c: string) => void; onErrore: (m: string) => void }) {
   const video = useRef<HTMLVideoElement>(null);
   const cb = useRef(onCodice);
   const err = useRef(onErrore);

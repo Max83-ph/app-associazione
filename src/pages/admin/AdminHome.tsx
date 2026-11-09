@@ -54,6 +54,13 @@ export function AdminHome() {
       ],
     },
     {
+      titolo: 'Carnevale',
+      voci: [
+        { a: '/admin/carnevale', icona: 'utenti', titolo: 'Sfila con noi', sotto: 'Iscritti, prove costume, quote' },
+        { a: '/staff/carnevale', icona: 'scansiona', titolo: 'Prove costume', sotto: 'QR, taglie e incassi' },
+      ],
+    },
+    {
       titolo: 'Soci',
       voci: [
         { a: '/admin/soci', icona: 'utenti', titolo: 'Soci', sotto: soci ? `${attivi} attivi` : 'Elenco, tessere, iscrizioni', badge: daApprovare ? `${daApprovare} da approvare` : undefined },

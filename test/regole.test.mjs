@@ -257,3 +257,59 @@ test('iscritti inseriti a mano: li crea l\'organizzatore, lo staff completa firm
   // Le prenotazioni fatte dall'app restano modificabili dallo staff solo per ingresso e pagamento.
   await assertFails(updateDoc(doc(db('staff2'), 'bookings/MENUOK123456'), { firma: FIRMA }));
 });
+
+test('carnevale: iscrizione con prova, posti dello slot, doppioni e staff', async () => {
+  const ora = Timestamp.fromMillis(Date.now() + 5 * 86400000);
+  await env.withSecurityRulesDisabled(async (c) => {
+    const d = c.firestore();
+    await setDoc(doc(d, 'contenuti/carnevale'), { aperte: true, quotaAdulto: 5000, quotaBambino: 3000, anticipo: 2000, etaBambino: 14, slotMinuti: 10, postiSlot: 5, sfilate: '', luogoProve: '' });
+    await setDoc(doc(d, 'proveCarnevale/g1'), { data: ora, giorno: '2026-11-21', dalle: '15:00', alle: '18:00', slotMinuti: 10, postiSlot: 5, prenotati: { h1540: 3 } });
+    await setDoc(doc(d, 'users/staffc'), { ruolo: 'staff', email: 'sc@x.it', nome: 'S' });
+  });
+  const persona = (cf, bambino = false) => ({ nome: 'A', cognome: 'Rossi', dataNascita: bambino ? '2018-01-01' : '1980-01-01', luogoNascita: 'Vercelli', codiceFiscale: cf, bambino });
+  const iscrivi = (code, persone, { prova = true, totale, ora = '15:40', occupati = 3, extra = {} } = {}) => {
+    const d = db(null);
+    const b = writeBatch(d);
+    const na = persone.filter((p) => !p.bambino).length;
+    const nb = persone.length - na;
+    if (prova) b.update(doc(d, 'proveCarnevale/g1'), { [`prenotati.h${ora.replace(':', '')}`]: occupati + persone.length, ultimaPrenotazione: code });
+    b.set(doc(d, `iscrizioniCarnevale/${code}`), {
+      persone, cfs: persone.map((p) => p.codiceFiscale), numAdulti: na, numBambini: nb,
+      referente: { indirizzo: 'Via X 1', cellulare: '3400000000', email: 'a@b.it' },
+      consensi: { privacy: true, liberatoriaFoto: true }, firma: FIRMA,
+      prova: prova ? { giornata: 'g1', ora, data: ora === '15:40' ? Timestamp.now() : Timestamp.now() } : null,
+      stato: 'valido', createdAt: serverTimestamp(), totale: totale ?? na * 5000 + nb * 3000, pagato: 0, movimenti: [], provato: false, consegnato: false, ...extra,
+    });
+    for (const p of persone) b.set(doc(d, `cfCarnevale/${p.codiceFiscale}`), { codice: code });
+    return b.commit();
+  };
+  // Due persone in uno slot con 3 occupati su 5: ok.
+  await assertSucceeds(iscrivi('CARNAAAAAAA2', [persona('RSSAAA80A01L750A'), persona('RSSBBB18A01L750B', true)]));
+  // Slot ormai pieno (5/5): rifiutata.
+  await assertFails(iscrivi('CARNBBBBBBB2', [persona('RSSCCC80A01L750C')], { occupati: 5 }));
+  // Totale sbagliato: rifiutata.
+  await assertFails(iscrivi('CARNCCCCCCC2', [persona('RSSDDD80A01L750D')], { prova: false, totale: 100 }));
+  // Codice fiscale già iscritto: rifiutata.
+  await assertFails(iscrivi('CARNDDDDDDD2', [persona('RSSAAA80A01L750A')], { prova: false }));
+  // Senza prova: ok; poi la prenota dal link.
+  await assertSucceeds(iscrivi('CARNEEEEEEE2', [persona('RSSEEE80A01L750E')], { prova: false }));
+  const d = db(null);
+  const b = writeBatch(d);
+  b.update(doc(d, 'proveCarnevale/g1'), { 'prenotati.h1550': 1, ultimaPrenotazione: 'CARNEEEEEEE2' });
+  b.update(doc(d, 'iscrizioniCarnevale/CARNEEEEEEE2'), { prova: { giornata: 'g1', ora: '15:50', data: Timestamp.now() } });
+  await assertSucceeds(b.commit());
+  // Non si può cambiare la prova già prenotata dal link.
+  const b2 = writeBatch(d);
+  b2.update(doc(d, 'proveCarnevale/g1'), { 'prenotati.h1600': 1, ultimaPrenotazione: 'CARNEEEEEEE2' });
+  b2.update(doc(d, 'iscrizioniCarnevale/CARNEEEEEEE2'), { prova: { giornata: 'g1', ora: '16:00', data: Timestamp.now() } });
+  await assertFails(b2.commit());
+  // Elenco: solo staff.
+  await assertFails(getDocs(collection(db(null), 'iscrizioniCarnevale')));
+  await assertSucceeds(getDocs(collection(db('staffc'), 'iscrizioniCarnevale')));
+  const { updateDoc } = await import('firebase/firestore');
+  await assertSucceeds(updateDoc(doc(db('staffc'), 'iscrizioniCarnevale/CARNAAAAAAA2'), { pagato: 4000, movimenti: [{ tipo: 'anticipo', importo: 4000, at: Timestamp.now(), da: 'sc@x.it' }], provato: true }));
+  await assertFails(updateDoc(doc(db('staffc'), 'iscrizioniCarnevale/CARNAAAAAAA2'), { totale: 0 }));
+  // Iscrizioni chiuse: rifiutata.
+  await env.withSecurityRulesDisabled(async (c) => updateDoc(doc(c.firestore(), 'contenuti/carnevale'), { aperte: false }));
+  await assertFails(iscrivi('CARNFFFFFFF2', [persona('RSSFFF80A01L750F')], { prova: false }));
+});

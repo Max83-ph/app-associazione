@@ -13,6 +13,8 @@ const TESTI: { chiave: CampoTesto; titolo: string; dove: string }[] = [
   { chiave: 'liberatoriaSoci', titolo: 'Liberatoria foto e video soci', dove: 'Modulo di iscrizione soci e PDF della domanda firmata.' },
   { chiave: 'informativaPrivacy', titolo: 'Informativa privacy eventi', dove: 'Iscrizione agli eventi e PDF dei laboratori firmati.' },
   { chiave: 'liberatoriaFoto', titolo: 'Liberatoria foto e video eventi', dove: 'Iscrizione ai laboratori e agli eventi a tema.' },
+  { chiave: 'informativaCarnevale', titolo: 'Informativa privacy Carnevale', dove: 'Iscrizione alle sfilate (Sfila con noi) e PDF firmati.' },
+  { chiave: 'liberatoriaCarnevale', titolo: 'Liberatoria foto e video Carnevale', dove: 'Iscrizione alle sfilate (Sfila con noi) e PDF firmati.' },
   { chiave: 'privacySito', titolo: 'Pagina Privacy e cookie', dove: 'Pagina /privacy, con il link in fondo a ogni pagina dell\'app.' },
 ];
 

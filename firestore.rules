@@ -285,14 +285,23 @@ service cloud.firestore {
         && (request.resource.data.url == '' || request.resource.data.url.matches('^https://script[.]google[.]com/macros/s/[A-Za-z0-9_-]+/exec$'));
       allow write: if isOrg() && id == 'testi'
         && request.resource.data.keys().hasOnly(['chiSiamo', 'informativaPrivacy', 'liberatoriaFoto', 'privacySito',
-             'informativaSoci', 'liberatoriaSoci', 'contatti', 'aggiornatoDa', 'aggiornatoIl'])
+             'informativaSoci', 'liberatoriaSoci', 'informativaCarnevale', 'liberatoriaCarnevale', 'contatti', 'aggiornatoDa', 'aggiornatoIl'])
         && request.resource.data.chiSiamo is string && request.resource.data.chiSiamo.size() <= 20000
         && request.resource.data.informativaPrivacy is string && request.resource.data.informativaPrivacy.size() <= 20000
         && (!('privacySito' in request.resource.data) || (request.resource.data.privacySito is string && request.resource.data.privacySito.size() <= 20000))
         && request.resource.data.liberatoriaFoto is string && request.resource.data.liberatoriaFoto.size() <= 20000
         && request.resource.data.informativaSoci is string && request.resource.data.informativaSoci.size() <= 20000
         && request.resource.data.liberatoriaSoci is string && request.resource.data.liberatoriaSoci.size() <= 20000
+        && (!('informativaCarnevale' in request.resource.data) || (request.resource.data.informativaCarnevale is string && request.resource.data.informativaCarnevale.size() <= 20000))
+        && (!('liberatoriaCarnevale' in request.resource.data) || (request.resource.data.liberatoriaCarnevale is string && request.resource.data.liberatoriaCarnevale.size() <= 20000))
         && request.resource.data.contatti is map;
+      // Impostazioni di "Sfila con noi": quote, anticipo, slot delle prove.
+      allow write: if isOrg() && id == 'carnevale'
+        && request.resource.data.aperte is bool
+        && request.resource.data.quotaAdulto is int && request.resource.data.quotaBambino is int
+        && request.resource.data.anticipo is int && request.resource.data.etaBambino is int
+        && request.resource.data.slotMinuti is int && request.resource.data.slotMinuti >= 5
+        && request.resource.data.postiSlot is int && request.resource.data.postiSlot >= 1;
     }
 
     // ---------- Documenti da firmare ----------
@@ -385,6 +394,99 @@ service cloud.firestore {
     match /registroPulizie/{id} {
       allow read, create: if isOrg();
       allow update, delete: if false;
+    }
+
+    // ---------- Carnevale: "Sfila con noi" ----------
+    function impCarnevale() { return get(/databases/$(database)/documents/contenuti/carnevale).data; }
+    function iscrizioneCarnevalePath(code) { return /databases/$(database)/documents/iscrizioniCarnevale/$(code); }
+
+    // Giornate di prova: le vedono tutti (servono i posti liberi), le crea l'organizzatore.
+    // Chi si iscrive può solo occupare i posti di uno slot, insieme all'iscrizione che li usa.
+    match /proveCarnevale/{gid} {
+      allow read: if true;
+      allow write: if isOrg();
+      allow update: if postiProvaValidi(gid);
+    }
+
+    function postiProvaValidi(gid) {
+      let prima = resource.data;
+      let dopo = request.resource.data;
+      let code = dopo.ultimaPrenotazione;
+      let isc = getAfter(iscrizioneCarnevalePath(code)).data;
+      let ora = 'h' + isc.prova.ora.replace(':', '');
+      return dopo.diff(prima).affectedKeys().hasOnly(['prenotati', 'ultimaPrenotazione'])
+        && code is string
+        && (!exists(iscrizioneCarnevalePath(code)) || get(iscrizioneCarnevalePath(code)).data.prova == null)
+        && isc.prova.giornata == gid
+        && dopo.prenotati.diff(prima.prenotati).affectedKeys().hasOnly([ora])
+        && dopo.prenotati[ora] == prima.prenotati.get(ora, 0) + isc.persone.size()
+        && dopo.prenotati[ora] <= prima.postiSlot;
+    }
+
+    // Iscrizioni: ID = codice casuale di 12 caratteri, come i biglietti.
+    match /iscrizioniCarnevale/{code} {
+      allow get: if true;
+      allow list: if isStaff();
+      allow create: if isOrg() || nuovaIscrizioneCarnevale(code);
+      allow update: if isOrg() || aggiornamentoStaffCarnevale() || sceltaProvaCarnevale(code);
+      allow delete: if isOrg();
+    }
+
+    function provaCarnevaleValida(d, code) {
+      return d.prova == null
+        || (d.prova.keys().hasOnly(['giornata', 'ora', 'data'])
+            && d.prova.giornata is string && d.prova.ora is string && d.prova.ora.matches('^[0-2][0-9]:[0-5][0-9]$')
+            && getAfter(/databases/$(database)/documents/proveCarnevale/$(d.prova.giornata)).data.ultimaPrenotazione == code);
+    }
+
+    function nuovaIscrizioneCarnevale(code) {
+      let d = request.resource.data;
+      let imp = impCarnevale();
+      return imp.aperte == true
+        && code.matches('^[A-Z2-9]{12}$')
+        && d.keys().hasOnly(['persone', 'cfs', 'numAdulti', 'numBambini', 'referente', 'consensi', 'firma', 'prova',
+             'stato', 'createdAt', 'totale', 'pagato', 'movimenti', 'provato', 'consegnato'])
+        && d.persone is list && d.persone.size() >= 1 && d.persone.size() <= 12
+        && d.cfs is list && d.cfs.size() == d.persone.size()
+        && d.numAdulti is int && d.numBambini is int && d.numAdulti >= 1 && d.numAdulti + d.numBambini == d.persone.size()
+        && d.totale == d.numAdulti * imp.quotaAdulto + d.numBambini * imp.quotaBambino
+        && d.referente.keys().hasOnly(['indirizzo', 'cellulare', 'email'])
+        && testo(d.referente.indirizzo, 160) && testo(d.referente.cellulare, 30) && testo(d.referente.email, 120)
+        && d.consensi.keys().hasOnly(['privacy', 'liberatoriaFoto'])
+        && d.consensi.privacy == true && d.consensi.liberatoriaFoto is bool
+        && d.firma is string && d.firma.size() > 100 && d.firma.size() <= 300000
+        && provaCarnevaleValida(d, code)
+        && d.stato == 'valido' && d.createdAt == request.time
+        && d.pagato == 0 && d.movimenti.size() == 0 && d.provato == false && d.consegnato == false;
+    }
+
+    // Chi si è iscritto senza prova la prenota dopo, dal proprio link.
+    function sceltaProvaCarnevale(code) {
+      let d = request.resource.data;
+      return resource.data.prova == null && resource.data.stato == 'valido'
+        && d.diff(resource.data).affectedKeys().hasOnly(['prova'])
+        && d.prova != null && provaCarnevaleValida(d, code);
+    }
+
+    // Staff alla prova: taglie, prova fatta, incassi, consegna, firma mancante.
+    function aggiornamentoStaffCarnevale() {
+      let d = request.resource.data;
+      return isStaff()
+        && d.diff(resource.data).affectedKeys().hasOnly(['persone', 'provato', 'provatoAt', 'pagato', 'movimenti',
+             'consegnato', 'consegnatoAt', 'consensi', 'firma', 'daCompletare', 'completataAt', 'note'])
+        && d.persone.size() == resource.data.persone.size()
+        && d.pagato is int && d.pagato >= 0
+        && (d.firma == null || (d.firma is string && d.firma.size() <= 300000));
+    }
+
+    // Un codice fiscale per iscrizione: il documento esiste se la persona è già iscritta.
+    match /cfCarnevale/{cf} {
+      allow read, delete: if isOrg();
+      allow create: if isOrg()
+        || (request.resource.data.keys().hasOnly(['codice'])
+            && cf in getAfter(iscrizioneCarnevalePath(request.resource.data.codice)).data.cfs
+            && !exists(iscrizioneCarnevalePath(request.resource.data.codice)));
+      allow update: if isOrg();
     }
 
     // Bacheca: la leggono i soci attivi, lo staff e gli organizzatori.

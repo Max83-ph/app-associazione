@@ -36,6 +36,27 @@ Se acconsenti, autorizzi ${TITOLARE} a pubblicare, senza alcun compenso, immagin
 
 Se non acconsenti l'iscrizione resta valida: lo staff farà in modo di non riprendere i partecipanti o di non pubblicarne le immagini.`;
 
+// ---------- Carnevale ----------
+export const INFORMATIVA_CARNEVALE = `**Informativa sul trattamento dei dati personali per le sfilate di Carnevale (art. 13 Regolamento UE 2016/679)**
+
+**Titolare del trattamento:** ${TITOLARE}, ${SEDE}, email ${CONTATTI.email}.
+
+**Quali dati:** dei figuranti nome, cognome, data e luogo di nascita e codice fiscale; del referente (il genitore, per i minori) indirizzo, cellulare ed email; la firma, la scelta sulla liberatoria foto e video, l'appuntamento per la prova costume, la taglia e i pagamenti della quota costume.
+
+**Perché:** iscrivere i figuranti alle sfilate, organizzare prove e consegna dei costumi, gestire la quota, contattare il referente per comunicazioni sulle sfilate e svolgere gli adempimenti richiesti per partecipare alla manifestazione. La base giuridica è la richiesta di partecipazione; per foto e video è il consenso, facoltativo.
+
+**A chi:** i dati sono trattati solo dai volontari incaricati dall'associazione. Sono conservati su server Google in Italia (Firebase, Milano); Google agisce come responsabile del trattamento e per alcuni servizi può trattarli anche fuori dall'Unione Europea con le garanzie previste dal Regolamento. Non sono ceduti né diffusi, salvo quanto richiesto per la partecipazione alla manifestazione.
+
+**Per quanto tempo:** fino a 12 mesi dopo l'ultima sfilata, poi vengono cancellati.
+
+**I tuoi diritti:** puoi chiedere in qualsiasi momento di accedere ai dati, correggerli, cancellarli o limitarne l'uso, e revocare il consenso alle foto, scrivendo a ${CONTATTI.email}. Puoi anche proporre reclamo al Garante per la protezione dei dati personali (garanteprivacy.it).`;
+
+export const LIBERATORIA_CARNEVALE = `Durante prove, preparativi e sfilate potranno essere scattate foto o girati video per raccontare le attività del gruppo sui suoi canali (app, social, bacheca, materiale informativo).
+
+Se acconsenti, autorizzi ${TITOLARE} a pubblicare, senza alcun compenso, immagini in cui compaiono i figuranti iscritti, anche minori se ne eserciti la responsabilità genitoriale (artt. 316 e 320 c.c.), escludendo usi che ne ledano la dignità o il decoro. Puoi revocare il consenso in qualsiasi momento scrivendo a ${CONTATTI.email}.
+
+Se non acconsenti l'iscrizione resta valida: faremo il possibile per non pubblicare immagini in cui i figuranti siano riconoscibili.`;
+
 // ---------- Soci ----------
 export const NOME_GRUPPO = NOME_ASSOCIAZIONE;
 export const NOME_COMITATO = 'Comitato';

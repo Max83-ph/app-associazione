@@ -303,6 +303,27 @@ test('carnevale: iscrizione con prova, posti dello slot, doppioni e staff', asyn
   b2.update(doc(d, 'proveCarnevale/g1'), { 'prenotati.h1600': 1, ultimaPrenotazione: 'CARNEEEEEEE2' });
   b2.update(doc(d, 'iscrizioniCarnevale/CARNEEEEEEE2'), { prova: { giornata: 'g1', ora: '16:00', data: Timestamp.now() } });
   await assertFails(b2.commit());
+  // Ora la sposta da 15:50 a 16:00 (stessa giornata): il vecchio slot scende, il nuovo sale.
+  const b3 = writeBatch(d);
+  b3.update(doc(d, 'proveCarnevale/g1'), { 'prenotati.h1550': 0, 'prenotati.h1600': 1, ultimaPrenotazione: 'CARNEEEEEEE2' });
+  b3.update(doc(d, 'iscrizioniCarnevale/CARNEEEEEEE2'), { prova: { giornata: 'g1', ora: '16:00', data: Timestamp.now() } });
+  await assertSucceeds(b3.commit());
+  // Spostamento che non libera il vecchio slot: rifiutato.
+  const b4 = writeBatch(d);
+  b4.update(doc(d, 'proveCarnevale/g1'), { 'prenotati.h1610': 1, ultimaPrenotazione: 'CARNEEEEEEE2' });
+  b4.update(doc(d, 'iscrizioniCarnevale/CARNEEEEEEE2'), { prova: { giornata: 'g1', ora: '16:10', data: Timestamp.now() } });
+  await assertFails(b4.commit());
+  // Correzione dei dati dal link: stessa persona, quota ricalcolata, nuovo codice fiscale.
+  const b5 = writeBatch(d);
+  b5.update(doc(d, 'iscrizioniCarnevale/CARNEEEEEEE2'), {
+    persone: [persona('RSSGGG80A01L750G')], cfs: ['RSSGGG80A01L750G'], numAdulti: 1, numBambini: 0, totale: 5000,
+    referente: { indirizzo: 'Via Y 2', cellulare: '3401111111', email: 'nuova@b.it' }, modificataAt: serverTimestamp(),
+  });
+  b5.set(doc(d, 'cfCarnevale/RSSGGG80A01L750G'), { codice: 'CARNEEEEEEE2' });
+  await assertSucceeds(b5.commit());
+  // Quota truccata nella modifica: rifiutata.
+  const { updateDoc: upd } = await import('firebase/firestore');
+  await assertFails(upd(doc(d, 'iscrizioniCarnevale/CARNEEEEEEE2'), { totale: 100, modificataAt: serverTimestamp() }));
   // Elenco: solo staff.
   await assertFails(getDocs(collection(db(null), 'iscrizioniCarnevale')));
   await assertSucceeds(getDocs(collection(db('staffc'), 'iscrizioniCarnevale')));

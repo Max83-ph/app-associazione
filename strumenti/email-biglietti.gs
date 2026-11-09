@@ -15,6 +15,7 @@ const CHIAVE_WEB = 'AIzaSyC_BfTDhiRA-6nr9X6VvWikF0tjdUw8dYM'; // chiave pubblica
 const APP = 'https://cappu-events.web.app';
 const NOME = 'Rione Cappuccini';
 const MAX_INVII = 3;
+const MAX_INVII_CARNEVALE = 8; // iscrizione + cambi di orario o di dati
 const FUSO = 'Europe/Rome';
 
 function doGet() {
@@ -30,6 +31,7 @@ function doPost(e) {
 
     lock.waitLock(15000);
     const props = PropertiesService.getScriptProperties();
+    if (dati.tipo === 'carnevale') return risposta(emailCarnevale(codice, String(dati.motivo || 'nuova'), props));
     const chiave = 'b_' + codice;
     const inviati = Number(props.getProperty(chiave) || 0);
     if (inviati >= MAX_INVII) return risposta({ ok: false, errore: 'limite' });
@@ -55,6 +57,70 @@ function doPost(e) {
 function prova() {
   const io = Session.getActiveUser().getEmail();
   GmailApp.sendEmail(io, 'Prova email biglietti ' + NOME, 'Funziona! Ora pubblica lo script come App web.', { name: NOME });
+}
+
+// ---------- Carnevale: "Sfila con noi" ----------
+
+function emailCarnevale(codice, motivo, props) {
+  const chiave = 'c_' + codice;
+  const inviati = Number(props.getProperty(chiave) || 0);
+  if (inviati >= MAX_INVII_CARNEVALE) return { ok: false, errore: 'limite' };
+  const i = leggi('iscrizioniCarnevale/' + codice);
+  if (!i) return { ok: false, errore: 'iscrizione non trovata' };
+  const email = (i.referente && i.referente.email) || '';
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, errore: 'email' };
+  const imp = leggi('contenuti/carnevale') || {};
+  const testi = leggi('contenuti/testi') || {};
+  const contatti = testi.contatti || {};
+  const leggibile = codice.match(/.{1,4}/g).join('-');
+  const link = APP + '/carnevale/b/' + codice;
+  const ref = i.persone[0];
+  const data = i.prova && i.prova.data ? new Date(i.prova.data) : null;
+  const quando = data ? giornoLungo(data) + ', ore ' + Utilities.formatDate(data, FUSO, 'HH:mm') : '';
+  const dove = String(imp.luogoProve || contatti.indirizzo || '').trim();
+  const resto = Math.max(0, Number(i.totale || 0) - Number(i.pagato || 0));
+  const anticipo = Math.min(resto, i.persone.length * Number(imp.anticipo || 0));
+  const titolo = { nuova: 'Iscrizione confermata', prova: 'Prova costume cambiata', dati: 'Dati aggiornati' }[motivo] || 'La tua iscrizione';
+  const nomi = i.persone.map(function (p) { return p.nome + ' ' + p.cognome; });
+
+  const testo = [
+    'Ciao ' + ref.nome + ',',
+    titolo + ': sfilate di Carnevale con il ' + NOME + '.',
+    '',
+    'Iscritti: ' + nomi.join(', '),
+    quando ? 'Prova costume: ' + quando + (dove ? ' – ' + dove : '') : 'Prova costume: non ancora prenotata (puoi farlo dal link qui sotto).',
+    'Quota costume: ' + euro(i.totale) + (i.pagato ? ' (pagato ' + euro(i.pagato) + ')' : ''),
+    resto > 0 && !i.pagato && anticipo ? 'Alla prova: anticipo ' + euro(anticipo) + ' (oppure tutto ' + euro(resto) + '), saldo alla consegna.' : '',
+    'Codice: ' + leggibile,
+    '',
+    'La tua pagina con il QR (per la prova e la consegna), dove puoi anche cambiare orario o correggere i dati: ' + link,
+    '',
+    NOME,
+  ].filter(function (r, k, a) { return r !== '' || a[k - 1] !== ''; }).join('\n');
+
+  const html =
+    '<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#1a1f2b">' +
+    '<div style="background:#1e6b45;color:#fff;padding:14px 18px;border-radius:12px 12px 0 0;font-weight:bold;font-size:16px">' + esc(NOME) + ' · Carnevale</div>' +
+    '<div style="border:1px solid #e2e6df;border-top:0;border-radius:0 0 12px 12px;padding:18px">' +
+    '<p style="margin:0 0 12px">Ciao ' + esc(ref.nome) + ',</p>' +
+    '<h1 style="font-size:22px;margin:0 0 10px">' + esc(titolo) + '</h1>' +
+    '<p style="margin:0 0 12px">' + esc(nomi.join(', ')) + '</p>' +
+    (quando
+      ? '<p style="margin:0 0 4px;font-size:13px;color:#56625b">PROVA COSTUME</p><p style="margin:0 0 4px;color:#1e6b45;font-weight:bold;font-size:17px">' + esc(quando) + '</p>' + (dove ? '<p style="margin:0 0 12px">' + esc(dove) + '</p>' : '')
+      : '<p style="margin:0 0 12px;padding:10px 12px;background:#fcf1cc;color:#6a5000;border-radius:8px">Prova costume non ancora prenotata: puoi sceglierla dalla tua pagina.</p>') +
+    '<p style="margin:12px 0;padding:10px 12px;background:#fcf1cc;color:#6a5000;border-radius:8px">Quota costume <strong>' + euro(i.totale) + '</strong>' +
+    (i.pagato ? ', già pagati ' + euro(i.pagato) : '') +
+    (resto > 0 && !i.pagato && anticipo ? '. Alla prova: anticipo <strong>' + euro(anticipo) + '</strong> (oppure tutto ' + euro(resto) + '), saldo alla consegna.' : '.') + '</p>' +
+    '<p style="margin:0 0 16px;color:#56625b">Codice: <strong style="font-size:18px;letter-spacing:1px;color:#1a1f2b">' + leggibile + '</strong></p>' +
+    '<p style="margin:0 0 16px"><a href="' + link + '" style="display:inline-block;background:#1e6b45;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:bold">Apri la tua pagina con il QR</a></p>' +
+    '<p style="margin:0;font-size:13px;color:#56625b">Mostra il QR alla prova e alla consegna del costume. Dalla stessa pagina puoi cambiare orario e correggere i dati.</p>' +
+    '</div></div>';
+
+  const opzioni = { name: NOME, htmlBody: html };
+  if (/@/.test(contatti.email || '')) opzioni.replyTo = contatti.email;
+  GmailApp.sendEmail(email, titolo + ' – Carnevale ' + NOME, testo, opzioni);
+  props.setProperty(chiave, String(inviati + 1));
+  return { ok: true };
 }
 
 // ---------- Email ----------

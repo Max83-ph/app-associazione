@@ -1,5 +1,5 @@
 import {
-  collection, deleteDoc, doc, getDoc, onSnapshot, query, runTransaction, serverTimestamp, setDoc, Timestamp, updateDoc, where,
+  collection, deleteDoc, doc, getDoc, onSnapshot, query, runTransaction, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { nuovoCodice } from './codice';
@@ -171,7 +171,7 @@ export async function creaIscrizioneCarnevale(n: NuovaIscrizioneCarnevale, imp: 
   return codice;
 }
 
-/** Prenota (o, per gli organizzatori, sposta) la prova di un'iscrizione. */
+/** Prenota o sposta la prova di un'iscrizione. */
 export async function prenotaProva(codice: string, giornataId: string, ora: string) {
   await runTransaction(db, async (tx) => {
     const ri = doc(iscrizioni, codice);
@@ -184,6 +184,7 @@ export async function prenotaProva(codice: string, giornataId: string, ora: stri
     if (!gs.exists()) throw new ErroreCarnevale('Giornata di prova non trovata.');
     const g = conId<GiornataProve>(gs.id, gs.data());
     const stessa = i.prova?.giornata === giornataId;
+    if (stessa && i.prova?.ora === ora) return;
     const giaQui = stessa && i.prova?.ora === ora ? n : 0;
     if (liberiSlot(g, ora) + giaQui < n) throw new ErroreCarnevale('Quell\'orario è pieno: scegline un altro.');
     // Spostamento (solo organizzatori): libera il vecchio slot.
@@ -199,9 +200,41 @@ export async function prenotaProva(codice: string, giornataId: string, ora: stri
     prenotati[chiaveSlot(ora)] = (prenotati[chiaveSlot(ora)] ?? 0) + n;
     if (vecchia) tx.update(rif, { prenotati, ultimaPrenotazione: codice });
     else tx.update(rif, { [`prenotati.${chiaveSlot(ora)}`]: occupatiSlot(g, ora) + n, ultimaPrenotazione: codice });
-    if (vecchiaG && vecchia) tx.update(doc(giornate, vecchiaG.id), { [`prenotati.${kv}`]: Math.max(0, occupatiSlot(vecchiaG, vecchia.ora) - n) });
+    if (vecchiaG && vecchia) tx.update(doc(giornate, vecchiaG.id), { [`prenotati.${kv}`]: Math.max(0, occupatiSlot(vecchiaG, vecchia.ora) - n), ultimaPrenotazione: codice });
     tx.update(ri, { prova: { giornata: g.id, ora, data: Timestamp.fromDate(dataSlot(g.giorno, ora)) } });
   });
+}
+
+/** Correzione dei dati dal proprio link: stesse persone, quota ricalcolata. */
+export async function modificaIscrizioneCarnevale(
+  i: IscrizioneCarnevale,
+  persone: FiguranteCarnevale[],
+  referente: IscrizioneCarnevale['referente'],
+  liberatoriaFoto: boolean | null,
+  imp: ImpostazioniCarnevale,
+) {
+  const nuove = persone.map((p, k) => ({
+    ...i.persone[k], nome: p.nome.trim(), cognome: p.cognome.trim(), dataNascita: p.dataNascita, luogoNascita: p.luogoNascita.trim(),
+    codiceFiscale: normalizzaCF(p.codiceFiscale), bambino: isBambino(p.dataNascita, imp),
+  }));
+  const q = quoteIscrizione(nuove, imp);
+  const cfs = nuove.map((p) => p.codiceFiscale);
+  const batch = writeBatch(db);
+  batch.update(doc(iscrizioni, i.id), {
+    persone: nuove, cfs, numAdulti: q.numAdulti, numBambini: q.numBambini, totale: q.totale,
+    referente: { indirizzo: referente.indirizzo.trim(), cellulare: referente.cellulare.trim(), email: referente.email.trim().toLowerCase() },
+    ...(i.consensi.privacy && liberatoriaFoto !== null ? { consensi: { privacy: true, liberatoriaFoto } } : {}),
+    modificataAt: serverTimestamp(),
+  });
+  for (const cf of cfs) if (!i.cfs.includes(cf)) batch.set(doc(db, 'cfCarnevale', cf), { codice: i.id });
+  try {
+    await batch.commit();
+  } catch (e) {
+    if (e && typeof e === 'object' && 'code' in e && e.code === 'permission-denied') {
+      throw new ErroreCarnevale('Modifica non riuscita: controlla i dati (il primo deve restare maggiorenne) o il codice fiscale, che potrebbe essere già iscritto.');
+    }
+    throw e;
+  }
 }
 
 export function ascoltaIscrizioneCarnevale(codice: string, cb: (i: IscrizioneCarnevale | null) => void, err: (e: Error) => void) {

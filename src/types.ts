@@ -286,6 +286,7 @@ export interface IscrizioneCarnevale {
   note?: string;
   inseritaDa?: string;
   completataAt?: Timestamp;
+  modificataAt?: Timestamp;
 }
 
 export interface GiornataProve {

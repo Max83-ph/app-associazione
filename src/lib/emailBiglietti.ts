@@ -34,11 +34,12 @@ export async function salvaConfigEmail(url: string) {
 
 export type EsitoEmail = 'inviata' | 'limite' | 'errore';
 
-export async function inviaBigliettoEmail(codice: string, url = urlCorrente): Promise<EsitoEmail> {
+/** tipo 'carnevale': iscrizione a "Sfila con noi" (motivo: nuova, prova cambiata, dati modificati). */
+export async function inviaBigliettoEmail(codice: string, url = urlCorrente, tipo?: 'carnevale', motivo?: 'nuova' | 'prova' | 'dati'): Promise<EsitoEmail> {
   if (!url) return 'errore';
   try {
     // text/plain: richiesta "semplice", senza preflight CORS (Apps Script non lo gestisce).
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ codice }) });
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ codice, tipo, motivo }) });
     const j = (await r.json()) as { ok: boolean; errore?: string };
     if (j.ok) return 'inviata';
     return j.errore === 'limite' ? 'limite' : 'errore';

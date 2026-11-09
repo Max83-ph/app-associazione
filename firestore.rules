@@ -405,7 +405,30 @@ service cloud.firestore {
     match /proveCarnevale/{gid} {
       allow read: if true;
       allow write: if isOrg();
-      allow update: if postiProvaValidi(gid);
+      allow update: if postiProvaValidi(gid) || spostamentoProvaValido(gid);
+    }
+
+    // Chi ha già una prova la sposta: il vecchio slot scende, il nuovo sale, della stessa quantità.
+    function spostamentoProvaValido(gid) {
+      let prima = resource.data;
+      let dopo = request.resource.data;
+      let code = dopo.ultimaPrenotazione;
+      let path = iscrizioneCarnevalePath(code);
+      let vecchia = get(path).data.prova;
+      let nuova = getAfter(path).data.prova;
+      let n = get(path).data.persone.size();
+      let kv = 'h' + vecchia.ora.replace(':', '');
+      let kn = 'h' + nuova.ora.replace(':', '');
+      let qui = vecchia.giornata == gid;
+      let la = nuova.giornata == gid;
+      return dopo.diff(prima).affectedKeys().hasOnly(['prenotati', 'ultimaPrenotazione'])
+        && code is string && exists(path) && vecchia != null && nuova != null
+        && get(path).data.provato == false
+        && (qui || la)
+        && (!qui || !la || kv != kn)
+        && dopo.prenotati.diff(prima.prenotati).affectedKeys().hasOnly(qui && la ? [kv, kn] : (qui ? [kv] : [kn]))
+        && (!qui || dopo.prenotati[kv] == prima.prenotati.get(kv, 0) - n)
+        && (!la || (dopo.prenotati[kn] == prima.prenotati.get(kn, 0) + n && dopo.prenotati[kn] <= prima.postiSlot));
     }
 
     function postiProvaValidi(gid) {
@@ -428,7 +451,8 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isStaff();
       allow create: if isOrg() || nuovaIscrizioneCarnevale(code);
-      allow update: if isOrg() || aggiornamentoStaffCarnevale() || sceltaProvaCarnevale(code);
+      allow update: if isOrg() || aggiornamentoStaffCarnevale() || sceltaProvaCarnevale(code)
+        || spostamentoProvaCarnevale(code) || modificaDatiCarnevale();
       allow delete: if isOrg();
     }
 
@@ -468,6 +492,32 @@ service cloud.firestore {
         && d.prova != null && provaCarnevaleValida(d, code);
     }
 
+    // Dal proprio link si cambia l'orario della prova (prima di averla fatta).
+    function spostamentoProvaCarnevale(code) {
+      let d = request.resource.data;
+      let prima = resource.data;
+      return prima.prova != null && prima.stato == 'valido' && prima.provato == false
+        && d.diff(prima).affectedKeys().hasOnly(['prova'])
+        && d.prova != null && provaCarnevaleValida(d, code)
+        && getAfter(/databases/$(database)/documents/proveCarnevale/$(prima.prova.giornata)).data.ultimaPrenotazione == code;
+    }
+
+    // Dal proprio link si correggono i dati (stesse persone, quota ricalcolata).
+    function modificaDatiCarnevale() {
+      let d = request.resource.data;
+      let prima = resource.data;
+      let imp = impCarnevale();
+      return prima.stato == 'valido'
+        && d.diff(prima).affectedKeys().hasOnly(['persone', 'cfs', 'numAdulti', 'numBambini', 'totale', 'referente', 'consensi', 'modificataAt'])
+        && d.persone.size() == prima.persone.size() && d.cfs.size() == d.persone.size()
+        && d.numAdulti is int && d.numBambini is int && d.numAdulti >= 1 && d.numAdulti + d.numBambini == d.persone.size()
+        && d.totale == d.numAdulti * imp.quotaAdulto + d.numBambini * imp.quotaBambino
+        && d.referente.keys().hasOnly(['indirizzo', 'cellulare', 'email'])
+        && testo(d.referente.indirizzo, 160) && testo(d.referente.cellulare, 30) && testo(d.referente.email, 120)
+        && (d.consensi == prima.consensi || (d.consensi.keys().hasOnly(['privacy', 'liberatoriaFoto']) && d.consensi.privacy == true && d.consensi.liberatoriaFoto is bool && prima.consensi.privacy == true))
+        && d.modificataAt == request.time;
+    }
+
     // Staff alla prova: taglie, prova fatta, incassi, consegna, firma mancante.
     function aggiornamentoStaffCarnevale() {
       let d = request.resource.data;
@@ -485,7 +535,8 @@ service cloud.firestore {
       allow create: if isOrg()
         || (request.resource.data.keys().hasOnly(['codice'])
             && cf in getAfter(iscrizioneCarnevalePath(request.resource.data.codice)).data.cfs
-            && !exists(iscrizioneCarnevalePath(request.resource.data.codice)));
+            && (!exists(iscrizioneCarnevalePath(request.resource.data.codice))
+                || !(cf in get(iscrizioneCarnevalePath(request.resource.data.codice)).data.cfs)));
       allow update: if isOrg();
     }
 

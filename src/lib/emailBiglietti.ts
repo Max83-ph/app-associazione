@@ -39,7 +39,7 @@ export let ultimoErroreEmail = '';
 
 function spiega(e: string): string {
   if (e === 'risposta') return 'lo script non ha risposto come app web. Controlla il deployment: tipo "App web", "Esegui come: Me", "Chi ha accesso: Chiunque", e dopo ogni modifica del codice "Gestisci deployment → Nuova versione".';
-  if (e === 'rete') return 'lo script non è raggiungibile (connessione o indirizzo /exec sbagliato).';
+  if (e === 'rete') return 'lo script non risponde. Apri l\'indirizzo /exec in una finestra in incognito: deve comparire {"ok":true…}. Se chiede di accedere, nel deployment metti "Chi ha accesso: Chiunque"; se dà errore, l\'indirizzo è vecchio: copia quello attuale da "Gestisci deployment" e salvalo qui.';
   if (/permission|autorizz|authoriz/i.test(e)) return 'lo script non ha i permessi: aprilo, esegui la funzione "prova" e consenti l\'accesso, poi pubblica una Nuova versione.';
   if (/troppe volte|too many times|limit/i.test(e)) return 'Gmail ha raggiunto il limite giornaliero di invii: riprova domani.';
   if (e === 'biglietto non trovato') return 'lo script non trova il biglietto (codice sbagliato?).';

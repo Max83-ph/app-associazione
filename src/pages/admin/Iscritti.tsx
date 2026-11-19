@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { annullaIngresso, ascoltaEvento, ascoltaPrenotazioniEvento, cancellaAllergie, eliminaIscrittoManuale, registraIngresso, segnaPagamento } from '../../lib/dati';
 import { AggiungiIscritto } from './AggiungiIscritto';
+import { ModificaPrenotazione } from './ModificaPrenotazione';
 import { dataBreve } from '../../lib/format';
 import { codiceLeggibile } from '../../lib/codice';
 import { descriviModalita, qrLinkDataUrl, scaricaPdfFirmato } from '../../lib/biglietto';
@@ -17,6 +18,7 @@ export function Iscritti() {
   const [mostraAnnullati, setMostraAnnullati] = useState(false);
   const [qr, setQr] = useState('');
   const [aggiungi, setAggiungi] = useState(false);
+  const [modifica, setModifica] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
   const [cerca, setCerca] = useState('');
 
@@ -158,12 +160,14 @@ export function Iscritti() {
                   <label className="spunta"><input type="checkbox" checked={p.pagamento.stato !== 'da_pagare'} onChange={(e) => segnaPagamento(p.id, e.target.checked, daPagare(p, ev)?.importo)} /> Pagato{daPagare(p, ev) ? ` ${euro(daPagare(p, ev)!.importo)}` : ''}</label>
                   <label className="spunta"><input type="checkbox" checked={p.statoBiglietto === 'usato'} onChange={(e) => (e.target.checked ? registraIngresso(p.id) : annullaIngresso(p.id))} /> Entrato</label>
                   {p.firma && <button type="button" className="link-bottone" onClick={() => scaricaPdfFirmato(p)}>PDF firmato</button>}
+                  {ev && <button type="button" className="link-bottone" onClick={() => { setMsg(''); setModifica(modifica === p.id ? null : p.id); }}>Modifica</button>}
                   {p.manuale && <Link className="link-bottone" to={`/biglietto/${p.id}`}>Biglietto</Link>}
                   {p.manuale && (
                     <button type="button" className="link-bottone" onClick={() => { if (confirm(`Togliere ${p.cognome} ${p.nome}? I posti tornano liberi.`)) eliminaIscrittoManuale(p.id).catch((e) => setErrore(e.message)); }}>Togli</button>
                   )}
                 </div>
               )}
+              {ev && modifica === p.id && <ModificaPrenotazione p={p} ev={ev} onChiudi={(m) => { setModifica(null); if (m) setMsg(m); }} />}
             </li>
           ))}
         </ul>

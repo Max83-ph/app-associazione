@@ -387,3 +387,10 @@ test('al tavolo: adulti e bambini', async () => {
   await assertSucceeds(prenota('BIMBI1234567', 3, 1));
   await assertFails(prenota('BIMBI2234567', 2, 2));
 });
+
+test('modifica prenotazione: organizzatore sì, chi prenota e staff no', async () => {
+  const { updateDoc } = await import('firebase/firestore');
+  await assertSucceeds(updateDoc(doc(db('org'), 'bookings/BIMBI1234567'), { quantita: 5, bambini: 2, note: 'x' }));
+  await assertFails(updateDoc(doc(db(null), 'bookings/BIMBI1234567'), { quantita: 6 }));
+  await assertFails(updateDoc(doc(db('staff1'), 'bookings/BIMBI1234567'), { quantita: 6 }));
+});

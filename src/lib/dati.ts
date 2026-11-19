@@ -251,6 +251,48 @@ export async function completaIscrizione(
   });
 }
 
+export interface ModificaPrenotazione {
+  nome: string;
+  cognome: string;
+  email: string;
+  telefono: string;
+  note: string;
+  quantita: number;
+  bambini?: number;
+  allergie: string;
+}
+
+/** Correzione da parte dell'organizzatore: aggiorna anche i posti dell'evento (può superare il massimo). */
+export async function modificaPrenotazione(codice: string, d: ModificaPrenotazione) {
+  await runTransaction(db, async (tx) => {
+    const ps = await tx.get(doc(prenotazioni, codice));
+    if (!ps.exists()) throw new ErrorePrenotazione('Prenotazione non trovata.');
+    const p = { id: ps.id, ...ps.data() } as Prenotazione;
+    const refEvento = doc(eventi, p.eventId);
+    const es = await tx.get(refEvento);
+    const delta = d.quantita - p.quantita;
+    if (es.exists() && delta !== 0 && p.statoBiglietto !== 'annullato') {
+      const ev = es.data() as Evento;
+      tx.update(refEvento, p.modalita === 'asporto'
+        ? { porzioniPrenotate: Math.max(0, ev.porzioniPrenotate + delta) }
+        : { postiOccupati: Math.max(0, ev.postiOccupati + delta) });
+    }
+    const allergie = d.allergie.trim().slice(0, 500);
+    tx.update(doc(prenotazioni, codice), {
+      nome: d.nome.trim(),
+      cognome: d.cognome.trim(),
+      email: d.email.trim().toLowerCase(),
+      telefono: d.telefono.trim(),
+      note: d.note.trim(),
+      quantita: d.quantita,
+      bambini: typeof d.bambini === 'number' ? d.bambini : deleteField(),
+      allergie: allergie || deleteField(),
+      consensoAllergie: allergie ? true : deleteField(),
+      modificataAt: serverTimestamp(),
+    });
+  });
+}
+
 /** Dopo l'evento: cancella le note su intolleranze e allergie (dati sulla salute). */
 export async function cancellaAllergie(codici: string[]) {
   for (let i = 0; i < codici.length; i += 400) {

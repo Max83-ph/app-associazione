@@ -77,8 +77,8 @@ service cloud.firestore {
       allow list: if isStaff();
       allow create: if nuovaPrenotazioneValida(code) || prenotazioneManuale();
       allow update: if aggiornamentoStaff() || completamentoIngresso() || annullamentoValido(code)
-        // Dopo l'evento l'organizzatore cancella le note su intolleranze e allergie.
-        || (isOrg() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['allergie', 'consensoAllergie']));
+        // L'organizzatore corregge le prenotazioni (dati, posti, adulti/bambini, allergie), anche oltre i posti.
+        || isOrg();
       allow delete: if isOrg();
     }
 

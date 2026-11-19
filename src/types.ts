@@ -107,6 +107,7 @@ export interface Prenotazione {
   consensoAllergie?: boolean;
   /** Al tavolo con quota bambino: quanti dei posti sono bambini (il resto adulti). */
   bambini?: number;
+  modificataAt?: Timestamp;
   manuale?: boolean;
   /** Mancano dati o firme: si completano all'ingresso. */
   daCompletare?: boolean;

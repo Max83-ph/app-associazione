@@ -716,3 +716,4 @@ input:focus, select:focus, textarea:focus { border-color: var(--verde); outline:
 /* Adulti e bambini al tavolo */
 .adulti-bambini { display: flex; flex-direction: column; gap: 10px; }
 .adulti-bambini .contatore > span { display: flex; flex-direction: column; }
+.modifica-prenotazione { margin-top: 10px; border: 2px solid var(--verde); }

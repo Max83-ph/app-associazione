@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import codiceScript from '../../../strumenti/email-biglietti.gs?raw';
-import { ascoltaConfigEmail, inviaBigliettoEmail, salvaConfigEmail, URL_SCRIPT_VALIDO } from '../../lib/emailBiglietti';
+import { ascoltaConfigEmail, inviaBigliettoEmail, salvaConfigEmail, ultimoErroreEmail, URL_SCRIPT_VALIDO } from '../../lib/emailBiglietti';
 import { normalizzaCodice } from '../../lib/codice';
 
 /** Riquadro in Gestione → Informative e contatti: attiva l'invio dei biglietti via email. */
@@ -33,7 +33,7 @@ export function EmailBiglietti() {
     setLavoro(true);
     setMsg('');
     const esito = await inviaBigliettoEmail(normalizzaCodice(prova), url.trim());
-    setMsg({ inviata: 'Email inviata all\'indirizzo della prenotazione: controlla (anche nello Spam).', limite: 'Questo biglietto è già stato inviato 3 volte: prova con un altro.', errore: 'Invio non riuscito: controlla il codice del biglietto e che lo script sia pubblicato come "Chiunque".' }[esito]);
+    setMsg({ inviata: 'Email inviata all\'indirizzo della prenotazione: controlla (anche nello Spam).', limite: 'Questo biglietto è già stato inviato 3 volte: prova con un altro.', errore: `Invio non riuscito: ${ultimoErroreEmail || 'motivo sconosciuto.'}` }[esito]);
     setLavoro(false);
   };
 

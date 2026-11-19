@@ -34,16 +34,44 @@ export async function salvaConfigEmail(url: string) {
 
 export type EsitoEmail = 'inviata' | 'limite' | 'errore';
 
+/** Motivo dell'ultimo invio non riuscito, spiegato per l'admin (pannello Email dei biglietti). */
+export let ultimoErroreEmail = '';
+
+function spiega(e: string): string {
+  if (e === 'risposta') return 'lo script non ha risposto come app web. Controlla il deployment: tipo "App web", "Esegui come: Me", "Chi ha accesso: Chiunque", e dopo ogni modifica del codice "Gestisci deployment → Nuova versione".';
+  if (e === 'rete') return 'lo script non è raggiungibile (connessione o indirizzo /exec sbagliato).';
+  if (/permission|autorizz|authoriz/i.test(e)) return 'lo script non ha i permessi: aprilo, esegui la funzione "prova" e consenti l\'accesso, poi pubblica una Nuova versione.';
+  if (/troppe volte|too many times|limit/i.test(e)) return 'Gmail ha raggiunto il limite giornaliero di invii: riprova domani.';
+  if (e === 'biglietto non trovato') return 'lo script non trova il biglietto (codice sbagliato?).';
+  if (e === 'email') return 'la prenotazione non ha un indirizzo email valido.';
+  return `lo script ha risposto: ${e}`;
+}
+
 /** tipo 'carnevale': iscrizione a "Sfila con noi" (motivo: nuova, prova cambiata, dati modificati). */
 export async function inviaBigliettoEmail(codice: string, url = urlCorrente, tipo?: 'carnevale', motivo?: 'nuova' | 'prova' | 'dati'): Promise<EsitoEmail> {
   if (!url) return 'errore';
   try {
     // text/plain: richiesta "semplice", senza preflight CORS (Apps Script non lo gestisce).
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ codice, tipo, motivo }) });
-    const j = (await r.json()) as { ok: boolean; errore?: string };
-    if (j.ok) return 'inviata';
-    return j.errore === 'limite' ? 'limite' : 'errore';
+    let r: Response;
+    try {
+      r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ codice, tipo, motivo }) });
+    } catch {
+      ultimoErroreEmail = spiega('rete');
+      return 'errore';
+    }
+    let j: { ok: boolean; errore?: string };
+    try {
+      j = (await r.json()) as { ok: boolean; errore?: string };
+    } catch {
+      ultimoErroreEmail = spiega('risposta');
+      return 'errore';
+    }
+    if (j.ok) { ultimoErroreEmail = ''; return 'inviata'; }
+    if (j.errore === 'limite') return 'limite';
+    ultimoErroreEmail = spiega(String(j.errore ?? 'sconosciuto'));
+    return 'errore';
   } catch {
+    ultimoErroreEmail = spiega('rete');
     return 'errore';
   }
 }

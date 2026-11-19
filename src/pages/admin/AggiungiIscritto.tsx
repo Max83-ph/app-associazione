@@ -15,6 +15,8 @@ export function AggiungiIscritto({ ev, onChiudi }: { ev: Evento; onChiudi: (msg?
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
   const [note, setNote] = useState('');
+  const [allergie, setAllergie] = useState('');
+  const [consensoAllergie, setConsensoAllergie] = useState(false);
   const [quantita, setQuantita] = useState(1);
   const [bambini, setBambini] = useState<Partecipante[]>([{ nome: '', cognome: '', eta: 6 }]);
   const [cartaceo, setCartaceo] = useState(false);
@@ -27,7 +29,7 @@ export function AggiungiIscritto({ ev, onChiudi }: { ev: Evento; onChiudi: (msg?
   const liberi = modalita === 'asporto' ? Infinity : ev.postiMax - ev.postiOccupati;
   const importo = daPagare({ quantita: q, modalita }, ev)?.importo ?? null;
   const emailOk = !email.trim() || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
-  const ok = nome.trim() && cognome.trim() && emailOk && q >= 1;
+  const ok = nome.trim() && cognome.trim() && emailOk && q >= 1 && (!allergie.trim() || consensoAllergie);
 
   const salva = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +45,7 @@ export function AggiungiIscritto({ ev, onChiudi }: { ev: Evento; onChiudi: (msg?
         liberatoriaFoto: ev.documentiRichiesti.liberatoriaFoto && !pasto ? liberatoria : null,
         pagato,
         importo: pagato ? importo : null,
+        allergie: pasto && consensoAllergie ? allergie : '',
       }, utente?.email ?? '');
       onChiudi(`${cognome.trim()} ${nome.trim()} aggiunto${cartaceo ? '' : ': firme e dati mancanti si completano all\'ingresso'}.`);
     } catch (err) {
@@ -99,6 +102,15 @@ export function AggiungiIscritto({ ev, onChiudi }: { ev: Evento; onChiudi: (msg?
       )}
       {q > liberi && <p className="avviso">Attenzione: restano {Math.max(0, liberi)} posti, così si va oltre il massimo ({ev.postiMax}). Si può salvare lo stesso.</p>}
 
+      {pasto && (
+        <fieldset>
+          <legend>Intolleranze o allergie</legend>
+          <textarea className="campo-allergie" value={allergie} maxLength={500} rows={2} aria-label="Intolleranze o allergie" onChange={(e) => setAllergie(e.target.value)} placeholder="es. Giulia: senza lattosio" />
+          {allergie.trim() && (
+            <label className="spunta"><input type="checkbox" checked={consensoAllergie} onChange={(e) => setConsensoAllergie(e.target.checked)} /> L'iscritto ha dato il consenso (a voce o su carta) all'uso solo per preparare i pasti</label>
+          )}
+        </fieldset>
+      )}
       <label>Note (facoltative)<input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} placeholder="es. iscritto da Giulia, allergia…" /></label>
 
       <label className="spunta"><input type="checkbox" checked={cartaceo} onChange={(e) => setCartaceo(e.target.checked)} /> Informativa{!pasto && ev.documentiRichiesti.liberatoriaFoto ? ' e liberatoria' : ''} già firmate su carta</label>

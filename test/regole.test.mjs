@@ -334,3 +334,31 @@ test('carnevale: iscrizione con prova, posti dello slot, doppioni e staff', asyn
   await env.withSecurityRulesDisabled(async (c) => updateDoc(doc(c.firestore(), 'contenuti/carnevale'), { aperte: false }));
   await assertFails(iscrivi('CARNFFFFFFF2', [persona('RSSFFF80A01L750F')], { prova: false }));
 });
+
+test('allergie nella prenotazione: solo con consenso esplicito', async () => {
+  const data = Timestamp.fromMillis(Date.now() + 8 * 86400000);
+  await env.withSecurityRulesDisabled(async (c) => {
+    await setDoc(doc(c.firestore(), 'events/evCena'), {
+      titolo: 'Cena', data, tipo: 'pasto', stato: 'aperto', visibile: true, chiusuraIscrizioni: null,
+      postiMax: 50, postiOccupati: 0, asportoAttivo: false, porzioniPrenotate: 0, porzioniMaxGiornoEvento: 0, inizioGiorno: data,
+      documentiRichiesti: { privacy: true, liberatoriaFoto: false },
+    });
+  });
+  const prenota = (code, extra) => {
+    const d = db(null);
+    const b = writeBatch(d);
+    b.set(doc(d, `bookings/${code}`), {
+      eventId: 'evCena', eventoTitolo: 'Cena', eventoData: data, modalita: 'tavolo', nome: 'Anna', cognome: 'Bianchi',
+      email: 'a@b.it', quantita: 2, partecipanti: [], consensi: { privacy: true, liberatoriaFoto: null }, firma: null,
+      statoBiglietto: 'valido', checkInAt: null, createdAt: serverTimestamp(),
+      pagamento: { stato: 'da_pagare', importo: null, metodo: null, riferimentoTransazione: null }, ...extra,
+    });
+    b.update(doc(d, 'events/evCena'), { ultimaPrenotazione: code, postiOccupati: increment(2) });
+    return b.commit();
+  };
+  await assertFails(prenota('ALLKO1234567', { allergie: 'celiaco' }));
+  await assertSucceeds(prenota('ALLOK1234567', { allergie: 'celiaco', consensoAllergie: true }));
+  const { updateDoc, deleteField } = await import('firebase/firestore');
+  await assertFails(updateDoc(doc(db('staff1'), 'bookings/ALLOK1234567'), { allergie: deleteField(), consensoAllergie: deleteField() }));
+  await assertSucceeds(updateDoc(doc(db('org'), 'bookings/ALLOK1234567'), { allergie: deleteField(), consensoAllergie: deleteField() }));
+});

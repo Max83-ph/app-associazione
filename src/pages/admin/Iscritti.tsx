@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { annullaIngresso, ascoltaEvento, ascoltaPrenotazioniEvento, eliminaIscrittoManuale, registraIngresso, segnaPagamento } from '../../lib/dati';
+import { annullaIngresso, ascoltaEvento, ascoltaPrenotazioniEvento, cancellaAllergie, eliminaIscrittoManuale, registraIngresso, segnaPagamento } from '../../lib/dati';
 import { AggiungiIscritto } from './AggiungiIscritto';
 import { dataBreve } from '../../lib/format';
 import { codiceLeggibile } from '../../lib/codice';
@@ -32,6 +32,10 @@ export function Iscritti() {
   const daCompletare = attive.filter((p) => p.daCompletare).length;
   const tot = (m: (p: Prenotazione) => boolean) => attive.filter(m).reduce((s, p) => s + p.quantita, 0);
   const cucina = useMemo(() => riepilogoCucina(attive), [attive]);
+  const conAllergie = (lista ?? []).filter((p) => p.allergie);
+  const allergieAttive = attive.filter((p) => p.allergie);
+  // eslint-disable-next-line react-hooks/purity
+  const concluso = !!ev && ev.data.toMillis() < Date.now() - 12 * 3600 * 1000;
   const conOrdine = attive.filter((p) => p.ordine?.length);
   const incassoPrevisto = conOrdine.reduce((s, p) => s + (p.totale ?? 0), 0);
   const importi = attive.map((p) => ({ p, d: daPagare(p, ev) })).filter((x) => x.d && !x.p.ordine?.length);
@@ -41,9 +45,9 @@ export function Iscritti() {
 
   const esportaCsv = () => {
     const righe = [
-      ['Codice', 'Cognome', 'Nome', 'Email', 'Telefono', 'Note', 'Modalità', 'Quantità', 'Ordine', 'Totale €', 'Bambini', 'Liberatoria foto', 'Pagamento', 'Stato'],
+      ['Codice', 'Cognome', 'Nome', 'Email', 'Telefono', 'Note', 'Intolleranze/allergie', 'Modalità', 'Quantità', 'Ordine', 'Totale €', 'Bambini', 'Liberatoria foto', 'Pagamento', 'Stato'],
       ...(lista ?? []).map((p) => [
-        codiceLeggibile(p.id), p.cognome, p.nome, p.email, p.telefono ?? '', p.note ?? '', p.modalita, String(p.quantita),
+        codiceLeggibile(p.id), p.cognome, p.nome, p.email, p.telefono ?? '', p.note ?? '', p.allergie ?? '', p.modalita, String(p.quantita),
         p.ordine?.length ? righeOrdine(p.ordine).join('; ') : '', p.ordine?.length ? ((p.totale ?? 0) / 100).toFixed(2).replace('.', ',') : '',
         p.partecipanti.map((b) => `${b.nome} ${b.cognome} (${b.eta})`).join('; '),
         p.consensi.liberatoriaFoto === null ? '' : p.consensi.liberatoriaFoto ? 'sì' : 'no',
@@ -76,6 +80,23 @@ export function Iscritti() {
             <div><strong>{tot((p) => p.statoBiglietto === 'usato')}</strong><span>entrati</span></div>
             <div><strong>{attive.filter((p) => p.pagamento.stato === 'da_pagare').length}</strong><span>da pagare</span></div>
           </div>
+        )}
+        {conAllergie.length > 0 && (
+          <details className="riepilogo-cucina" open>
+            <summary>Intolleranze e allergie ({allergieAttive.length} {allergieAttive.length === 1 ? 'prenotazione' : 'prenotazioni'})</summary>
+            <table>
+              <tbody>
+                {allergieAttive.map((p) => (
+                  <tr key={p.id}><td><strong>{p.cognome} {p.nome}</strong> · {p.quantita} pers.</td><td>{p.allergie}</td></tr>
+                ))}
+              </tbody>
+            </table>
+            {concluso ? (
+              <button type="button" className="bottone contorno piccolo" onClick={() => {
+                if (confirm('Cancellare tutte le note su intolleranze e allergie di questo evento?')) cancellaAllergie(conAllergie.map((p) => p.id)).catch((e) => setErrore(e.message));
+              }}>Evento concluso: cancella queste note</button>
+            ) : <p className="nota">Sono dati sulla salute: dopo l'evento cancellale con il pulsante che comparirà qui.</p>}
+          </details>
         )}
         {cucina.length > 0 && (
           <details className="riepilogo-cucina" open>
@@ -120,6 +141,7 @@ export function Iscritti() {
                 <div className="etichette">
                   {p.statoBiglietto === 'annullato' && <span className="etichetta etichetta-spento">Annullato</span>}
                   {p.manuale && <span className="etichetta etichetta-neutro">Inserito a mano</span>}
+                  {p.allergie && <span className="etichetta etichetta-giallo" title={p.allergie}>Allergie</span>}
                   {p.daCompletare && <span className="etichetta etichetta-caldo">Da completare</span>}
                   {p.statoBiglietto === 'usato' && <span className="etichetta etichetta-ok">Entrato</span>}
                   {p.consensi.liberatoriaFoto === false && <span className="etichetta etichetta-giallo">Niente foto</span>}

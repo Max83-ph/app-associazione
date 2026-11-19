@@ -11,6 +11,8 @@ import {
   updateDoc,
   where,
   Timestamp,
+  writeBatch,
+  deleteField,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Evento, Modalita, Partecipante, Prenotazione, Ruolo, Utente, VoceOrdine } from '../types';
@@ -87,6 +89,8 @@ export interface NuovaPrenotazione {
   /** Solo asporto con menù: piatti scelti e totale in centesimi. */
   ordine?: VoceOrdine[];
   totale?: number;
+  /** Intolleranze o allergie, solo con consenso esplicito. */
+  allergie?: string;
 }
 
 export class ErrorePrenotazione extends Error {}
@@ -135,6 +139,7 @@ export async function creaPrenotazione(eventId: string, p: NuovaPrenotazione): P
       quantita: p.quantita,
       partecipanti: p.partecipanti,
       ...(p.ordine?.length ? { ordine: p.ordine, totale: p.totale ?? 0 } : {}),
+      ...(p.allergie?.trim() ? { allergie: p.allergie.trim().slice(0, 500), consensoAllergie: true } : {}),
       consensi: { privacy: true, liberatoriaFoto: p.liberatoriaFoto },
       firma: p.firma,
       statoBiglietto: 'valido',
@@ -162,6 +167,7 @@ export interface IscrittoManuale {
   liberatoriaFoto: boolean | null;
   pagato: boolean;
   importo: number | null;
+  allergie: string;
 }
 
 /** Iscrizione presa fuori dall'app: la inserisce l'organizzatore, anche oltre i posti. */
@@ -195,6 +201,7 @@ export async function aggiungiIscrittoManuale(eventId: string, d: IscrittoManual
       manuale: true,
       daCompletare: !d.cartaceo,
       inseritaDa: autore,
+      ...(d.allergie.trim() ? { allergie: d.allergie.trim().slice(0, 500), consensoAllergie: true } : {}),
     });
     tx.update(refEvento, d.modalita === 'asporto'
       ? { porzioniPrenotate: ev.porzioniPrenotate + d.quantita }
@@ -237,6 +244,15 @@ export async function completaIscrizione(
     completataAt: serverTimestamp(),
     ...(d.entra ? { statoBiglietto: 'usato', checkInAt: serverTimestamp() } : {}),
   });
+}
+
+/** Dopo l'evento: cancella le note su intolleranze e allergie (dati sulla salute). */
+export async function cancellaAllergie(codici: string[]) {
+  for (let i = 0; i < codici.length; i += 400) {
+    const b = writeBatch(db);
+    for (const c of codici.slice(i, i + 400)) b.update(doc(prenotazioni, c), { allergie: deleteField(), consensoAllergie: deleteField() });
+    await b.commit();
+  }
 }
 
 export async function leggiPrenotazione(codice: string): Promise<Prenotazione | null> {

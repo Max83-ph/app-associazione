@@ -98,6 +98,9 @@ export interface Prenotazione {
   annullataAt?: Timestamp;
   createdAt: Timestamp;
   /** Iscrizione presa fuori dall'app e inserita dall'organizzatore. */
+  /** Intolleranze o allergie (dati sulla salute, con consenso esplicito): solo per la cucina. */
+  allergie?: string;
+  consensoAllergie?: boolean;
   manuale?: boolean;
   /** Mancano dati o firme: si completano all'ingresso. */
   daCompletare?: boolean;

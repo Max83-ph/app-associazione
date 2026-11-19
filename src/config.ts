@@ -22,6 +22,8 @@ export const INFORMATIVA_PRIVACY = `**Informativa sul trattamento dei dati perso
 
 **Quali dati:** nome, cognome ed email di chi prenota; per laboratori ed eventi per bambini anche nome, cognome ed età dei partecipanti, la firma e la scelta sulla liberatoria foto e video.
 
+**Intolleranze e allergie (pranzi e cene):** se decidi di indicarle, sono dati relativi alla salute (art. 9 del Regolamento). Le trattiamo solo con il tuo consenso esplicito e solo per preparare i pasti; le vedono solo i volontari della cucina e dell'ingresso e le cancelliamo dopo l'evento. Indicarle è facoltativo.
+
 **Perché:** gestire la prenotazione, l'ingresso all'evento (biglietto con QR), l'invio del biglietto via email ed eventuali comunicazioni sull'evento (es. variazioni di orario). La base giuridica è l'esecuzione della richiesta di partecipazione; per foto e video è il consenso, facoltativo.
 
 **A chi:** i dati sono trattati solo dai volontari incaricati dall'associazione. Sono conservati su server Google in Italia (Firebase, Milano); per l'invio delle email si usa Gmail. Google agisce come responsabile del trattamento; per alcuni servizi (account di accesso, email, assistenza) può trattarli anche fuori dall'Unione Europea con le garanzie previste dal Regolamento. Non sono ceduti né diffusi.

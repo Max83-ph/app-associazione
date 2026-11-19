@@ -93,6 +93,8 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
   const [privacy, setPrivacy] = useState(false);
   const [liberatoria, setLiberatoria] = useState<boolean | null>(null);
   const [firma, setFirma] = useState<string | null>(null);
+  const [allergie, setAllergie] = useState('');
+  const [consensoAllergie, setConsensoAllergie] = useState(false);
   const [invio, setInvio] = useState(false);
 
   const massimo = modalita === 'asporto' ? Math.min(10, porzioniLibere) : Math.min(10, postiLiberi);
@@ -117,6 +119,7 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
   if (ev.documentiRichiesti.liberatoriaFoto && !pasto && liberatoria === null) problemi.push('la scelta sulla liberatoria foto');
   if (serveFirma && !firma) problemi.push('la firma');
   if (conMenu && ordine.length === 0) problemi.push('almeno un piatto dal menù');
+  if (pasto && allergie.trim() && !consensoAllergie) problemi.push('il consenso per le intolleranze e allergie (o svuota il campo)');
   if (conMenu ? porzioniMenu > limiteMenu : q > massimo) problemi.push(conMenu ? `al massimo ${limiteMenu} porzioni` : `al massimo ${massimo} ${modalita === 'asporto' ? 'porzioni' : 'posti'}`);
 
   const invia = async (e: React.FormEvent) => {
@@ -132,6 +135,7 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
         email,
         quantita: q,
         ...(conMenu ? { ordine, totale } : {}),
+        ...(pasto && allergie.trim() && consensoAllergie ? { allergie } : {}),
         partecipanti: conBambini
           ? partecipanti.map((p) => ({ nome: p.nome.trim(), cognome: p.cognome.trim(), eta: p.eta }))
           : [],
@@ -268,6 +272,21 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
             <span>{ordine.length ? `${ordine.reduce((s, v) => s + v.quantita, 0)} articoli` : 'Nessun piatto scelto'}</span>
             <strong>Totale {euro(totale)}</strong>
           </div>
+        </fieldset>
+      )}
+
+      {pasto && (
+        <fieldset>
+          <legend>Intolleranze o allergie <span className="nota">(facoltativo)</span></legend>
+          <textarea className="campo-allergie" value={allergie} maxLength={500} rows={3} aria-label="Intolleranze o allergie"
+            onChange={(e) => setAllergie(e.target.value)} placeholder="es. Luca: celiaco. Anna: allergia alla frutta secca" />
+          <span className="nota">Scrivi per chi e cosa. Lo leggerà solo chi cucina.</span>
+          {allergie.trim() && (
+            <label className="spunta">
+              <input type="checkbox" checked={consensoAllergie} onChange={(e) => setConsensoAllergie(e.target.checked)} />
+              Acconsento all'uso di queste informazioni sulla salute solo per preparare i pasti; saranno cancellate dopo l'evento.
+            </label>
+          )}
         </fieldset>
       )}
 

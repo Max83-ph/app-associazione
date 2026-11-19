@@ -76,11 +76,19 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isStaff();
       allow create: if nuovaPrenotazioneValida(code) || prenotazioneManuale();
-      allow update: if aggiornamentoStaff() || completamentoIngresso() || annullamentoValido(code);
+      allow update: if aggiornamentoStaff() || completamentoIngresso() || annullamentoValido(code)
+        // Dopo l'evento l'organizzatore cancella le note su intolleranze e allergie.
+        || (isOrg() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['allergie', 'consensoAllergie']));
       allow delete: if isOrg();
     }
 
     function testo(v, max) { return v is string && v.size() > 0 && v.size() <= max; }
+
+    // Intolleranze e allergie (dati sulla salute): facoltative, solo con consenso esplicito.
+    function allergieValide(d) {
+      return (!('allergie' in d) || (d.allergie is string && d.allergie.size() <= 500))
+        && (!('allergie' in d) || d.allergie.size() == 0 || d.consensoAllergie == true);
+    }
 
     function nuovaPrenotazioneValida(code) {
       let d = request.resource.data;
@@ -89,7 +97,8 @@ service cloud.firestore {
       return code.size() >= 10 && code.size() <= 16
         && d.keys().hasOnly(['eventId', 'eventoTitolo', 'eventoData', 'modalita', 'nome', 'cognome',
              'email', 'quantita', 'partecipanti', 'consensi', 'firma', 'statoBiglietto', 'checkInAt',
-             'createdAt', 'pagamento', 'ordine', 'totale'])
+             'createdAt', 'pagamento', 'ordine', 'totale', 'allergie', 'consensoAllergie'])
+        && allergieValide(d)
         && testo(d.nome, 60) && testo(d.cognome, 60)
         && d.email is string && d.email.size() <= 120 && d.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
         && d.quantita is int && d.quantita >= 1 && d.quantita <= (d.modalita == 'asporto' ? 50 : 10)
@@ -132,7 +141,8 @@ service cloud.firestore {
       return isOrg() && d.manuale == true
         && d.keys().hasOnly(['eventId', 'eventoTitolo', 'eventoData', 'modalita', 'nome', 'cognome',
              'email', 'quantita', 'partecipanti', 'consensi', 'firma', 'statoBiglietto', 'checkInAt',
-             'createdAt', 'pagamento', 'manuale', 'daCompletare', 'telefono', 'note', 'inseritaDa'])
+             'createdAt', 'pagamento', 'manuale', 'daCompletare', 'telefono', 'note', 'inseritaDa', 'allergie', 'consensoAllergie'])
+        && allergieValide(d)
         && testo(d.nome, 60) && testo(d.cognome, 60)
         && d.email is string && d.email.size() <= 120
         && d.quantita is int && d.quantita >= 1 && d.quantita <= 30

@@ -186,6 +186,7 @@ function PannelloEsito({ esito, evento, onChiudi }: { esito: Esito; evento?: Eve
       {p.partecipanti.some((b) => b.nome) && <div>{p.partecipanti.filter((b) => b.nome).map((b) => `${b.nome} (${b.eta})`).join(', ')}</div>}
       {(p.telefono || p.note) && <div className="nota-esito">{[p.telefono, p.note].filter(Boolean).join(' · ')}</div>}
       {p.consensi.liberatoriaFoto === false && <div className="etichetta etichetta-giallo">Niente foto</div>}
+      {p.allergie && <div className="avviso-allergie" role="note">⚠ Allergie: {p.allergie}</div>}
       {!!p.ordine?.length && <OrdineEsito p={p} evento={evento} />}
       {!p.ordine?.length && quota && p.pagamento.stato === 'da_pagare' && esito.tipo !== 'annullato' && esito.tipo !== 'altro-evento' && (
         <div className="ordine-esito">

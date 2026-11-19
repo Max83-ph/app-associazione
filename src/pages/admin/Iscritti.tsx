@@ -6,7 +6,7 @@ import { dataBreve } from '../../lib/format';
 import { codiceLeggibile } from '../../lib/codice';
 import { descriviModalita, qrLinkDataUrl, scaricaPdfFirmato } from '../../lib/biglietto';
 import { Icona } from '../../components/Icona';
-import { daPagare, euro, righeOrdine, riepilogoCucina } from '../../lib/menu';
+import { daPagare, euro, haQuotaBambino, righeOrdine, riepilogoCucina } from '../../lib/menu';
 import type { Evento, Prenotazione } from '../../types';
 
 export function Iscritti() {
@@ -31,6 +31,9 @@ export function Iscritti() {
   const visibili = (mostraAnnullati ? lista ?? [] : attive).filter((p) => !filtro || `${p.cognome} ${p.nome} ${p.partecipanti.map((b) => b.nome).join(' ')}`.toLowerCase().includes(filtro));
   const daCompletare = attive.filter((p) => p.daCompletare).length;
   const tot = (m: (p: Prenotazione) => boolean) => attive.filter(m).reduce((s, p) => s + p.quantita, 0);
+  const tavolo = attive.filter((p) => p.modalita === 'tavolo');
+  const totBambini = tavolo.reduce((s, p) => s + (p.bambini ?? 0), 0);
+  const totAdulti = tavolo.reduce((s, p) => s + p.quantita, 0) - totBambini;
   const cucina = useMemo(() => riepilogoCucina(attive), [attive]);
   const conAllergie = (lista ?? []).filter((p) => p.allergie);
   const allergieAttive = attive.filter((p) => p.allergie);
@@ -45,9 +48,10 @@ export function Iscritti() {
 
   const esportaCsv = () => {
     const righe = [
-      ['Codice', 'Cognome', 'Nome', 'Email', 'Telefono', 'Note', 'Intolleranze/allergie', 'Modalità', 'Quantità', 'Ordine', 'Totale €', 'Bambini', 'Liberatoria foto', 'Pagamento', 'Stato'],
+      ['Codice', 'Cognome', 'Nome', 'Email', 'Telefono', 'Note', 'Intolleranze/allergie', 'Modalità', 'Quantità', 'Adulti', 'Bambini (tavolo)', 'Ordine', 'Totale €', 'Bambini', 'Liberatoria foto', 'Pagamento', 'Stato'],
       ...(lista ?? []).map((p) => [
         codiceLeggibile(p.id), p.cognome, p.nome, p.email, p.telefono ?? '', p.note ?? '', p.allergie ?? '', p.modalita, String(p.quantita),
+        typeof p.bambini === 'number' ? String(p.quantita - p.bambini) : '', typeof p.bambini === 'number' ? String(p.bambini) : '',
         p.ordine?.length ? righeOrdine(p.ordine).join('; ') : '', p.ordine?.length ? ((p.totale ?? 0) / 100).toFixed(2).replace('.', ',') : '',
         p.partecipanti.map((b) => `${b.nome} ${b.cognome} (${b.eta})`).join('; '),
         p.consensi.liberatoriaFoto === null ? '' : p.consensi.liberatoriaFoto ? 'sì' : 'no',
@@ -76,7 +80,9 @@ export function Iscritti() {
         {ev && (
           <div className="riepilogo">
             <div><strong>{tot((p) => p.modalita !== 'asporto')}</strong><span>/{ev.postiMax} posti</span></div>
-            {ev.tipo === 'pasto' && <div><strong>{tot((p) => p.modalita === 'asporto')}</strong><span>asporto</span></div>}
+            {haQuotaBambino(ev) && <div><strong>{totAdulti}</strong><span>adulti</span></div>}
+            {haQuotaBambino(ev) && <div><strong>{totBambini}</strong><span>bambini</span></div>}
+            {ev.tipo === 'pasto' && ev.asportoAttivo && <div><strong>{tot((p) => p.modalita === 'asporto')}</strong><span>asporto</span></div>}
             <div><strong>{tot((p) => p.statoBiglietto === 'usato')}</strong><span>entrati</span></div>
             <div><strong>{attive.filter((p) => p.pagamento.stato === 'da_pagare').length}</strong><span>da pagare</span></div>
           </div>

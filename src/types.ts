@@ -34,6 +34,10 @@ export interface Evento {
   prezzo: string;
   /** Quota da pagare in loco per ogni persona/bambino, in centesimi: l'ingresso mostra quanto incassare. */
   quotaPersona?: number | null;
+  /** Pranzi e cene: quota bambino in centesimi (null = nessuna distinzione adulti/bambini). */
+  quotaBambino?: number | null;
+  /** Bambini fino a questa età compiuta (di base 12). */
+  etaMaxBambini?: number;
   stato: StatoEvento;
   visibile: boolean;
   postiMax: number;
@@ -101,6 +105,8 @@ export interface Prenotazione {
   /** Intolleranze o allergie (dati sulla salute, con consenso esplicito): solo per la cucina. */
   allergie?: string;
   consensoAllergie?: boolean;
+  /** Al tavolo con quota bambino: quanti dei posti sono bambini (il resto adulti). */
+  bambini?: number;
   manuale?: boolean;
   /** Mancano dati o firme: si completano all'ingresso. */
   daCompletare?: boolean;

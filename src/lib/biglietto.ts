@@ -5,7 +5,7 @@ import { codiceLeggibile } from './codice';
 import { avvisoArrivo, dataBreve, dove } from './format';
 import { NOME_ASSOCIAZIONE } from '../config';
 import { testiCorrenti, testoSemplice } from './testi';
-import { daPagare, euro, righeOrdine } from './menu';
+import { daPagare, descriviAdultiBambini, euro, righeOrdine } from './menu';
 
 /** Il QR contiene solo il codice del biglietto, nessun dato personale. */
 export const qrDataUrl = (codice: string, width = 480) =>
@@ -17,6 +17,7 @@ export const qrLinkDataUrl = (url: string, width = 1024) =>
 export function descriviModalita(p: Prenotazione): string {
   if (p.modalita === 'asporto' && p.ordine?.length) return `Asporto, totale ${euro(p.totale ?? 0)}`;
   if (p.modalita === 'asporto') return `Asporto, ${p.quantita} ${p.quantita === 1 ? 'porzione' : 'porzioni'}`;
+  if (p.modalita === 'tavolo' && descriviAdultiBambini(p)) return `Al tavolo, ${descriviAdultiBambini(p)}`;
   if (p.modalita === 'tavolo') return `Al tavolo, ${p.quantita} ${p.quantita === 1 ? 'persona' : 'persone'}`;
   if (p.partecipanti.length) return `${p.partecipanti.length} ${p.partecipanti.length === 1 ? 'bambino' : 'bambini'}`;
   return `${p.quantita} ${p.quantita === 1 ? 'persona' : 'persone'}`;

@@ -91,6 +91,8 @@ export interface NuovaPrenotazione {
   totale?: number;
   /** Intolleranze o allergie, solo con consenso esplicito. */
   allergie?: string;
+  /** Al tavolo con quota bambino: quanti bambini tra i posti. */
+  bambini?: number;
 }
 
 export class ErrorePrenotazione extends Error {}
@@ -140,6 +142,7 @@ export async function creaPrenotazione(eventId: string, p: NuovaPrenotazione): P
       partecipanti: p.partecipanti,
       ...(p.ordine?.length ? { ordine: p.ordine, totale: p.totale ?? 0 } : {}),
       ...(p.allergie?.trim() ? { allergie: p.allergie.trim().slice(0, 500), consensoAllergie: true } : {}),
+      ...(typeof p.bambini === 'number' ? { bambini: p.bambini } : {}),
       consensi: { privacy: true, liberatoriaFoto: p.liberatoriaFoto },
       firma: p.firma,
       statoBiglietto: 'valido',
@@ -168,6 +171,7 @@ export interface IscrittoManuale {
   pagato: boolean;
   importo: number | null;
   allergie: string;
+  bambini?: number;
 }
 
 /** Iscrizione presa fuori dall'app: la inserisce l'organizzatore, anche oltre i posti. */
@@ -201,6 +205,7 @@ export async function aggiungiIscrittoManuale(eventId: string, d: IscrittoManual
       manuale: true,
       daCompletare: !d.cartaceo,
       inseritaDa: autore,
+      ...(typeof d.bambini === 'number' ? { bambini: d.bambini } : {}),
       ...(d.allergie.trim() ? { allergie: d.allergie.trim().slice(0, 500), consensoAllergie: true } : {}),
     });
     tx.update(refEvento, d.modalita === 'asporto'

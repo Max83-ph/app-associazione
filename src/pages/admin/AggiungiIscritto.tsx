@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { aggiungiIscrittoManuale } from '../../lib/dati';
 import { useAuth } from '../../lib/auth';
-import { daPagare, euro } from '../../lib/menu';
+import { daPagare, euro, haQuotaBambino } from '../../lib/menu';
 import type { Evento, Modalita, Partecipante } from '../../types';
 
 /** Iscrizione presa fuori dall'app (a voce, su carta, WhatsApp): la si inserisce qui, firme e dati mancanti si completano all'ingresso. */
@@ -18,6 +18,7 @@ export function AggiungiIscritto({ ev, onChiudi }: { ev: Evento; onChiudi: (msg?
   const [allergie, setAllergie] = useState('');
   const [consensoAllergie, setConsensoAllergie] = useState(false);
   const [quantita, setQuantita] = useState(1);
+  const [numBambini, setNumBambini] = useState(0);
   const [bambini, setBambini] = useState<Partecipante[]>([{ nome: '', cognome: '', eta: 6 }]);
   const [cartaceo, setCartaceo] = useState(false);
   const [liberatoria, setLiberatoria] = useState<boolean | null>(null);
@@ -25,9 +26,10 @@ export function AggiungiIscritto({ ev, onChiudi }: { ev: Evento; onChiudi: (msg?
   const [invio, setInvio] = useState(false);
   const [errore, setErrore] = useState('');
 
-  const q = conBambini ? bambini.length : quantita;
+  const adultiBambini = modalita === 'tavolo' && haQuotaBambino(ev);
+  const q = conBambini ? bambini.length : adultiBambini ? quantita + numBambini : quantita;
   const liberi = modalita === 'asporto' ? Infinity : ev.postiMax - ev.postiOccupati;
-  const importo = daPagare({ quantita: q, modalita }, ev)?.importo ?? null;
+  const importo = daPagare({ quantita: q, modalita, bambini: adultiBambini ? numBambini : undefined }, ev)?.importo ?? null;
   const emailOk = !email.trim() || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
   const ok = nome.trim() && cognome.trim() && emailOk && q >= 1 && (!allergie.trim() || consensoAllergie);
 
@@ -46,6 +48,7 @@ export function AggiungiIscritto({ ev, onChiudi }: { ev: Evento; onChiudi: (msg?
         pagato,
         importo: pagato ? importo : null,
         allergie: pasto && consensoAllergie ? allergie : '',
+        ...(adultiBambini ? { bambini: numBambini } : {}),
       }, utente?.email ?? '');
       onChiudi(`${cognome.trim()} ${nome.trim()} aggiunto${cartaceo ? '' : ': firme e dati mancanti si completano all\'ingresso'}.`);
     } catch (err) {
@@ -90,6 +93,25 @@ export function AggiungiIscritto({ ev, onChiudi }: { ev: Evento; onChiudi: (msg?
           ))}
           {bambini.length < 30 && <button type="button" className="bottone-tratteggiato" onClick={() => setBambini((l) => [...l, { nome: '', cognome: '', eta: 6 }])}>+ Aggiungi un bambino</button>}
         </fieldset>
+      ) : adultiBambini ? (
+        <div className="adulti-bambini">
+          <div className="contatore">
+            <span>Adulti</span>
+            <div>
+              <button type="button" aria-label="Un adulto in meno" disabled={quantita <= 1} onClick={() => setQuantita((n) => n - 1)}>−</button>
+              <output>{quantita}</output>
+              <button type="button" aria-label="Un adulto in più" disabled={q >= 30} onClick={() => setQuantita((n) => n + 1)}>+</button>
+            </div>
+          </div>
+          <div className="contatore">
+            <span>Bambini <span className="nota">fino a {ev.etaMaxBambini ?? 12} anni</span></span>
+            <div>
+              <button type="button" aria-label="Un bambino in meno" disabled={numBambini <= 0} onClick={() => setNumBambini((n) => n - 1)}>−</button>
+              <output>{numBambini}</output>
+              <button type="button" aria-label="Un bambino in più" disabled={q >= 30} onClick={() => setNumBambini((n) => n + 1)}>+</button>
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="contatore">
           <span>{modalita === 'asporto' ? 'Porzioni' : 'Persone'}</span>

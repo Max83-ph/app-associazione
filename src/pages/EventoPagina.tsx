@@ -11,7 +11,7 @@ import { useTesti } from '../lib/testi';
 import { useEmailBiglietti } from '../lib/emailBiglietti';
 import { Testo } from '../components/TestoRicco';
 import { Allegati } from '../components/File';
-import { creaOrdine, euro, haMenuAsporto, perCategoria, porzioniOrdine, totaleOrdine } from '../lib/menu';
+import { creaOrdine, daPagare, etaMaxBambini, euro, haMenuAsporto, haQuotaBambino, perCategoria, porzioniOrdine, quotaUnitaria, totaleOrdine } from '../lib/menu';
 
 export function EventoPagina() {
   const { id = '' } = useParams();
@@ -88,6 +88,7 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
   const [cognome, setCognome] = useState('');
   const [email, setEmail] = useState('');
   const [quantita, setQuantita] = useState(1);
+  const [numBambini, setNumBambini] = useState(0);
   const [scelte, setScelte] = useState<Record<string, number>>({});
   const [partecipanti, setPartecipanti] = useState<Partecipante[]>([{ nome: '', cognome: '', eta: 6 }]);
   const [privacy, setPrivacy] = useState(false);
@@ -108,7 +109,9 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
   const ordine = conMenu ? creaOrdine(menuVisibile, scelte) : [];
   const totale = totaleOrdine(ordine);
   const porzioniMenu = porzioniOrdine(ordine);
-  const q = conBambini ? partecipanti.length : conMenu ? Math.max(1, porzioniMenu) : quantita;
+  const adultiBambini = modalita === 'tavolo' && haQuotaBambino(ev);
+  const q = conBambini ? partecipanti.length : conMenu ? Math.max(1, porzioniMenu) : adultiBambini ? quantita + numBambini : quantita;
+  const stima = adultiBambini ? daPagare({ quantita: q, bambini: numBambini, modalita }, ev) : null;
   const limiteMenu = Math.min(50, porzioniLibere);
   const cambia = (id: string, d: number) => setScelte((s) => ({ ...s, [id]: Math.max(0, Math.min(20, (s[id] ?? 0) + d)) }));
   const problemi: string[] = [];
@@ -134,6 +137,7 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
         cognome,
         email,
         quantita: q,
+        ...(adultiBambini ? { bambini: numBambini } : {}),
         ...(conMenu ? { ordine, totale } : {}),
         ...(pasto && allergie.trim() && consensoAllergie ? { allergie } : {}),
         partecipanti: conBambini
@@ -230,7 +234,28 @@ function ModuloIscrizione({ ev, onErrore }: { ev: Evento; onErrore: (m: string) 
         <label>Email<input type="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
           {emailAttiva && <span className="nota">Ti mandiamo qui il biglietto. Se non arriva entro qualche minuto, guarda nello Spam o in Promozioni.</span>}
         </label>
-        {!conBambini && !conMenu && (
+        {adultiBambini && (
+          <div className="adulti-bambini">
+            <div className="contatore">
+              <span>Adulti{quotaUnitaria(ev) ? <span className="nota"> · {euro(quotaUnitaria(ev)!)}</span> : null}</span>
+              <div>
+                <button type="button" aria-label="Un adulto in meno" disabled={quantita <= 1} onClick={() => setQuantita((n) => n - 1)}>−</button>
+                <output aria-live="polite">{quantita}</output>
+                <button type="button" aria-label="Un adulto in più" disabled={q >= massimo} onClick={() => setQuantita((n) => n + 1)}>+</button>
+              </div>
+            </div>
+            <div className="contatore">
+              <span>Bambini <span className="nota">fino a {etaMaxBambini(ev)} anni compiuti · {ev.quotaBambino ? euro(ev.quotaBambino) : 'gratis'}</span></span>
+              <div>
+                <button type="button" aria-label="Un bambino in meno" disabled={numBambini <= 0} onClick={() => setNumBambini((n) => n - 1)}>−</button>
+                <output aria-live="polite">{numBambini}</output>
+                <button type="button" aria-label="Un bambino in più" disabled={q >= massimo} onClick={() => setNumBambini((n) => n + 1)}>+</button>
+              </div>
+            </div>
+            {stima && <div className="menu-totale" aria-live="polite"><span>{q} {q === 1 ? 'posto' : 'posti'}</span><strong>{euro(stima.importo)} all'ingresso</strong></div>}
+          </div>
+        )}
+        {!conBambini && !conMenu && !adultiBambini && (
           <div className="contatore">
             <span>{modalita === 'asporto' ? 'Porzioni' : 'Persone'}</span>
             <div>

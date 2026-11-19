@@ -97,8 +97,9 @@ service cloud.firestore {
       return code.size() >= 10 && code.size() <= 16
         && d.keys().hasOnly(['eventId', 'eventoTitolo', 'eventoData', 'modalita', 'nome', 'cognome',
              'email', 'quantita', 'partecipanti', 'consensi', 'firma', 'statoBiglietto', 'checkInAt',
-             'createdAt', 'pagamento', 'ordine', 'totale', 'allergie', 'consensoAllergie'])
+             'createdAt', 'pagamento', 'ordine', 'totale', 'allergie', 'consensoAllergie', 'bambini'])
         && allergieValide(d)
+        && (!('bambini' in d) || (d.modalita == 'tavolo' && d.bambini is int && d.bambini >= 0 && d.bambini < d.quantita))
         && testo(d.nome, 60) && testo(d.cognome, 60)
         && d.email is string && d.email.size() <= 120 && d.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
         && d.quantita is int && d.quantita >= 1 && d.quantita <= (d.modalita == 'asporto' ? 50 : 10)
@@ -141,8 +142,9 @@ service cloud.firestore {
       return isOrg() && d.manuale == true
         && d.keys().hasOnly(['eventId', 'eventoTitolo', 'eventoData', 'modalita', 'nome', 'cognome',
              'email', 'quantita', 'partecipanti', 'consensi', 'firma', 'statoBiglietto', 'checkInAt',
-             'createdAt', 'pagamento', 'manuale', 'daCompletare', 'telefono', 'note', 'inseritaDa', 'allergie', 'consensoAllergie'])
+             'createdAt', 'pagamento', 'manuale', 'daCompletare', 'telefono', 'note', 'inseritaDa', 'allergie', 'consensoAllergie', 'bambini'])
         && allergieValide(d)
+        && (!('bambini' in d) || (d.bambini is int && d.bambini >= 0 && d.bambini <= d.quantita))
         && testo(d.nome, 60) && testo(d.cognome, 60)
         && d.email is string && d.email.size() <= 120
         && d.quantita is int && d.quantita >= 1 && d.quantita <= 30

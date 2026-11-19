@@ -25,12 +25,34 @@ export function quotaUnitaria(ev: Pick<Evento, 'quotaPersona' | 'prezzo'> | null
 }
 
 /** Quanto deve pagare questa prenotazione: totale dell'ordine d'asporto, oppure quota × persone. */
-export function daPagare(p: Pick<Prenotazione, 'ordine' | 'totale' | 'quantita' | 'modalita'>, ev: Pick<Evento, 'quotaPersona' | 'prezzo'> | null | undefined):
+/** Pranzi e cene con distinzione adulti/bambini (quota bambino impostata, anche 0). */
+export const haQuotaBambino = (ev: Pick<Evento, 'tipo' | 'quotaBambino'> | null | undefined) => !!ev && ev.tipo === 'pasto' && typeof ev.quotaBambino === 'number';
+export const etaMaxBambini = (ev: Pick<Evento, 'etaMaxBambini'> | null | undefined) => ev?.etaMaxBambini ?? 12;
+
+/** "2 adulti + 1 bambino" (o null se la prenotazione non distingue). */
+export function descriviAdultiBambini(p: Pick<Prenotazione, 'quantita' | 'bambini'>): string | null {
+  if (typeof p.bambini !== 'number') return null;
+  const a = p.quantita - p.bambini;
+  const parti = [];
+  if (a) parti.push(`${a} ${a === 1 ? 'adulto' : 'adulti'}`);
+  if (p.bambini) parti.push(`${p.bambini} ${p.bambini === 1 ? 'bambino' : 'bambini'}`);
+  return parti.join(' + ');
+}
+
+export function daPagare(p: Pick<Prenotazione, 'ordine' | 'totale' | 'quantita' | 'modalita' | 'bambini'>, ev: Pick<Evento, 'quotaPersona' | 'prezzo' | 'quotaBambino'> | null | undefined):
   { importo: number; dettaglio: string } | null {
   if (p.ordine?.length) return { importo: p.totale ?? 0, dettaglio: 'ordine d\'asporto' };
   if (p.modalita === 'asporto') return null;
   const q = quotaUnitaria(ev);
   if (!q) return null;
+  const qb = ev?.quotaBambino;
+  if (typeof qb === 'number' && typeof p.bambini === 'number' && p.bambini > 0) {
+    const a = p.quantita - p.bambini;
+    return {
+      importo: a * q + p.bambini * qb,
+      dettaglio: [a ? `${a} × ${euro(q)}` : '', `${p.bambini} × ${euro(qb)}`].filter(Boolean).join(' + '),
+    };
+  }
   return { importo: q * p.quantita, dettaglio: `${p.quantita} × ${euro(q)}` };
 }
 

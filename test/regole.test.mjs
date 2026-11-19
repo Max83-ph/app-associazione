@@ -362,3 +362,28 @@ test('allergie nella prenotazione: solo con consenso esplicito', async () => {
   await assertFails(updateDoc(doc(db('staff1'), 'bookings/ALLOK1234567'), { allergie: deleteField(), consensoAllergie: deleteField() }));
   await assertSucceeds(updateDoc(doc(db('org'), 'bookings/ALLOK1234567'), { allergie: deleteField(), consensoAllergie: deleteField() }));
 });
+
+test('al tavolo: adulti e bambini', async () => {
+  const data = Timestamp.fromMillis(Date.now() + 9 * 86400000);
+  await env.withSecurityRulesDisabled(async (c) => {
+    await setDoc(doc(c.firestore(), 'events/evCena2'), {
+      titolo: 'Cena', data, tipo: 'pasto', stato: 'aperto', visibile: true, chiusuraIscrizioni: null, quotaPersona: 2500, quotaBambino: 1000,
+      postiMax: 50, postiOccupati: 0, asportoAttivo: false, porzioniPrenotate: 0, porzioniMaxGiornoEvento: 0, inizioGiorno: data,
+      documentiRichiesti: { privacy: true, liberatoriaFoto: false },
+    });
+  });
+  const prenota = (code, quantita, bambini) => {
+    const d = db(null);
+    const b = writeBatch(d);
+    b.set(doc(d, `bookings/${code}`), {
+      eventId: 'evCena2', eventoTitolo: 'Cena', eventoData: data, modalita: 'tavolo', nome: 'Anna', cognome: 'Bianchi',
+      email: 'a@b.it', quantita, bambini, partecipanti: [], consensi: { privacy: true, liberatoriaFoto: null }, firma: null,
+      statoBiglietto: 'valido', checkInAt: null, createdAt: serverTimestamp(),
+      pagamento: { stato: 'da_pagare', importo: null, metodo: null, riferimentoTransazione: null },
+    });
+    b.update(doc(d, 'events/evCena2'), { ultimaPrenotazione: code, postiOccupati: increment(quantita) });
+    return b.commit();
+  };
+  await assertSucceeds(prenota('BIMBI1234567', 3, 1));
+  await assertFails(prenota('BIMBI2234567', 2, 2));
+});

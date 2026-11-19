@@ -712,3 +712,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--verde); outline:
 .campo-allergie { width: 100%; box-sizing: border-box; border: 1px solid var(--bordo); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 16px; resize: vertical; min-height: 70px; background: var(--bianco); color: var(--inchiostro); }
 .avviso-allergie { background: var(--giallo-tenue); color: var(--giallo-testo); border-radius: 10px; padding: 8px 10px; font-weight: 650; font-size: 15px; }
 .riepilogo-cucina td:last-child:not(:nth-child(3)) { text-align: left; }
+
+/* Adulti e bambini al tavolo */
+.adulti-bambini { display: flex; flex-direction: column; gap: 10px; }
+.adulti-bambini .contatore > span { display: flex; flex-direction: column; }

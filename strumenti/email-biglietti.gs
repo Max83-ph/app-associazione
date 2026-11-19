@@ -201,6 +201,10 @@ function descrivi(p) {
   const q = Number(p.quantita || 1);
   if (p.modalita === 'asporto' && p.ordine && p.ordine.length) return 'Asporto, totale ' + euro(p.totale) + ' da pagare al ritiro';
   if (p.modalita === 'asporto') return 'Asporto, ' + q + (q === 1 ? ' porzione' : ' porzioni');
+  if (p.modalita === 'tavolo' && typeof p.bambini === 'number' && p.bambini > 0) {
+    const a = q - p.bambini;
+    return 'Al tavolo, ' + (a ? a + (a === 1 ? ' adulto + ' : ' adulti + ') : '') + p.bambini + (p.bambini === 1 ? ' bambino' : ' bambini');
+  }
   if (p.modalita === 'tavolo') return 'Al tavolo, ' + q + (q === 1 ? ' persona' : ' persone');
   if (p.partecipanti && p.partecipanti.length) return p.partecipanti.length + (p.partecipanti.length === 1 ? ' bambino' : ' bambini');
   return q + (q === 1 ? ' persona' : ' persone');

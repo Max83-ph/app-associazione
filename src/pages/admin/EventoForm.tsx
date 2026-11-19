@@ -32,6 +32,8 @@ interface Bozza {
   galleria: RifFile[];
   prezzo: string;
   quota: string;
+  quotaBambino: string;
+  etaMaxBambini: number;
   stato: StatoEvento;
   postiMax: number;
   asportoAttivo: boolean;
@@ -57,6 +59,8 @@ const vuota: Bozza = {
   galleria: [],
   prezzo: '',
   quota: '',
+  quotaBambino: '',
+  etaMaxBambini: 12,
   stato: 'bozza',
   postiMax: 60,
   asportoAttivo: true,
@@ -83,6 +87,8 @@ function daEvento(ev: Evento): Bozza {
     galleria: ev.galleria ?? [],
     prezzo: ev.prezzo,
     quota: typeof ev.quotaPersona === 'number' ? (ev.quotaPersona / 100).toFixed(2).replace('.', ',') : '',
+    quotaBambino: typeof ev.quotaBambino === 'number' ? (ev.quotaBambino / 100).toFixed(2).replace('.', ',') : '',
+    etaMaxBambini: ev.etaMaxBambini ?? 12,
     stato: ev.stato,
     postiMax: ev.postiMax,
     asportoAttivo: ev.asportoAttivo,
@@ -132,6 +138,8 @@ export function EventoForm() {
     setErrore('');
     if (!b.titolo.trim() || !b.data) return setErrore('Titolo e data sono obbligatori.');
     if (b.quota.trim() && centesimi(b.quota) === null) return setErrore('Quota all\'ingresso non valida: scrivi ad esempio 5 oppure 7,50.');
+    if (b.tipo === 'pasto' && b.quotaBambino.trim() && centesimi(b.quotaBambino) === null) return setErrore('Quota bambino non valida: scrivi ad esempio 10 oppure 0 per gratis.');
+    if (b.tipo === 'pasto' && b.quotaBambino.trim() && !b.quota.trim()) return setErrore('Per distinguere adulti e bambini serve anche la quota adulto.');
     if (originale && b.postiMax < originale.postiOccupati)
       return setErrore(`Ci sono già ${originale.postiOccupati} posti prenotati: il massimo non può essere più basso.`);
     const data = new Date(b.data);
@@ -153,6 +161,8 @@ export function EventoForm() {
       galleria: b.galleria,
       prezzo: b.prezzo.trim(),
       quotaPersona: b.quota.trim() ? centesimi(b.quota) : null,
+      quotaBambino: b.tipo === 'pasto' && b.quotaBambino.trim() ? centesimi(b.quotaBambino) : null,
+      etaMaxBambini: b.etaMaxBambini || 12,
       stato: b.stato,
       postiMax: b.postiMax,
       asportoAttivo: b.tipo === 'pasto' && b.asportoAttivo,
@@ -223,6 +233,18 @@ export function EventoForm() {
                 <input value={b.quota} onChange={(e) => set('quota', e.target.value)} inputMode="decimal" placeholder="es. 5" aria-invalid={!!b.quota.trim() && centesimi(b.quota) === null} />
                 <span className="nota">Quando scansioni il biglietto vedi subito quanto incassare (quota × persone) e lo segni pagato con un tocco. Vuoto = nessun importo da mostrare.</span>
               </label>
+            )}
+            {b.tipo === 'pasto' && (
+              <div className="griglia-2">
+                <label>Quota bambino € (facoltativa)
+                  <input value={b.quotaBambino} onChange={(e) => set('quotaBambino', e.target.value)} inputMode="decimal" placeholder="es. 10"
+                    aria-invalid={!!b.quotaBambino.trim() && centesimi(b.quotaBambino) === null} />
+                </label>
+                <label>Bambini fino a … anni compiuti
+                  <input type="number" min={1} max={17} value={b.etaMaxBambini} onChange={(e) => set('etaMaxBambini', Number(e.target.value))} />
+                </label>
+                <span className="nota" style={{ gridColumn: '1 / -1' }}>Con la quota bambino chi prenota al tavolo indica adulti e bambini separatamente. Vuota = nessuna distinzione; 0 = bambini gratis.</span>
+              </div>
             )}
             <label>Chiusura iscrizioni (facoltativa)<input type="datetime-local" value={b.chiusura} onChange={(e) => set('chiusura', e.target.value)} />
               <span className="nota">Se vuota, le iscrizioni restano aperte fino all'inizio dell'evento.</span>
